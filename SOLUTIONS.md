@@ -476,5 +476,64 @@ git commit -m "fix: add missing map and database dependencies"
 
 ---
 
+### SOLUTION-019: Supabase returns raw binary for GEOGRAPHY columns
+
+**Problem:** Querying `safety_zones` directly returns the `coordinates` column as an opaque binary blob — not usable in JavaScript.
+
+**Root cause:** Supabase JS client does not auto-serialize PostGIS `geography` / `geometry` types. They come back as encoded binary that the browser cannot parse.
+
+**Solution:** Create a PostgreSQL function that converts geography to GeoJSON using `ST_AsGeoJSON()`, and call it via `.rpc()` instead of a direct table query:
+
+```sql
+-- In migration 002_create_tables.sql
+CREATE OR REPLACE FUNCTION get_zones_for_city(p_city_id TEXT)
+RETURNS TABLE (
+  ...,
+  geojson_geometry JSON,   -- ST_AsGeoJSON(coordinates::geometry)::json
+  centroid_lat FLOAT,      -- ST_Y(centroid::geometry)
+  centroid_lng FLOAT       -- ST_X(centroid::geometry)
+) ...
+```
+
+```javascript
+// lib/database.js — use .rpc() not .from()
+const { data } = await supabase.rpc('get_zones_for_city', { p_city_id: 'barcelona' })
+// data[0].geojson_geometry is now a proper { type: 'Polygon', coordinates: [...] } object
+```
+
+**Prevention:** Never SELECT raw geography/geometry columns directly. Always go through a function or use `ST_AsGeoJSON()` in the SELECT.
+
+---
+
+### SOLUTION-020: PostGIS RPC function not found in Supabase
+
+**Problem:** `supabase.rpc('get_zones_for_city', ...)` returns `{ error: { message: 'Could not find the function...' } }`.
+
+**Root cause A:** Migration 002 was not run, or ran with errors (check SQL editor output carefully).
+
+**Root cause B:** Function was created in the wrong schema. Supabase exposes functions in the `public` schema by default.
+
+**Root cause C:** The function parameter name in the RPC call doesn't match the SQL definition exactly.
+
+**Solution:**
+```sql
+-- Verify the function exists and is in public schema:
+SELECT routine_name, routine_schema
+FROM information_schema.routines
+WHERE routine_name = 'get_zones_for_city';
+
+-- If missing: re-run migration 002 (it uses CREATE OR REPLACE, safe to re-run)
+```
+
+```javascript
+// Parameter names must match EXACTLY (p_city_id, not cityId or city_id):
+await supabase.rpc('get_zones_for_city', { p_city_id: 'barcelona' }) // ✓
+await supabase.rpc('get_zones_for_city', { city_id: 'barcelona' })   // ✗ wrong param name
+```
+
+**Prevention:** Always name RPC parameters with `p_` prefix (p_city_id) to clearly distinguish them from column names and avoid naming collisions.
+
+---
+
 *Last updated: 2026-04-04*
 *Solutions: 18*

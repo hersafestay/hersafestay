@@ -391,6 +391,45 @@ const supabaseAdmin = createClient(
 
 ---
 
+## OPT-011: Spatial GIST Indexes on All Geography Columns (Implemented — Day 2)
+
+**Status:** Implemented in migration 002_create_tables.sql
+
+**Problem (anticipated):** Without spatial indexes, any PostGIS spatial query (`ST_Contains`, `ST_Intersects`, `ST_Within`) requires a full table scan — checking every row's polygon against the query point. At 500 cities × 12 zones = 6,000 rows this becomes very slow.
+
+**Solution:** GIST indexes on every GEOGRAPHY column, created in the migration:
+
+```sql
+-- Primary spatial index — enables fast ST_Contains, ST_Intersects
+CREATE INDEX idx_zones_geography ON safety_zones USING GIST (coordinates);
+
+-- Centroid index — fast point lookups
+CREATE INDEX idx_zones_centroid  ON safety_zones USING GIST (centroid);
+
+-- Properties location index — proximity queries (nearest hotels to a point)
+CREATE INDEX idx_properties_location ON properties USING GIST (
+  ST_SetSRID(ST_MakePoint(lng::double precision, lat::double precision), 4326)
+);
+```
+
+**Why GIST (not B-tree)?**
+- B-tree indexes work on scalar values (numbers, strings) — can't index 2D shapes
+- GIST (Generalized Search Tree) understands bounding boxes of 2D objects
+- PostGIS spatial queries automatically use GIST indexes when present
+- Query planner will use `idx_zones_geography` for any ST_Contains / ST_Intersects call
+
+**Performance impact (estimated):**
+
+| Query | Without GIST | With GIST | Improvement |
+|-------|-------------|-----------|-------------|
+| "Which zone contains this point?" | ~45ms (full scan, 60 zones) | ~2ms (index) | ~22× |
+| "All zones in viewport bbox" | ~120ms (full scan, 500 zones) | ~8ms (index) | ~15× |
+| "Nearest properties to a point" | ~200ms (full scan, 5,000 props) | ~12ms (index) | ~17× |
+
+**Prevention:** Always create GIST indexes on geography columns before inserting data. Creating them after is much slower (full index build).
+
+---
+
 ## Profiling Guide
 
 ### How to profile map performance:

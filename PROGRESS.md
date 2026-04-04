@@ -31,7 +31,7 @@
 ### Day 1 — Architecture & Foundation
 **Date:** April 4, 2026
 **Expert role:** Solutions Architect + Database Engineer
-**Status:** ✅ In progress
+**Status:** ✅ Complete
 
 **Goal:** Solid foundation before first line of map code.
 
@@ -42,11 +42,11 @@
 - [x] SOLUTIONS.md — solution log template ✅
 - [x] OPTIMIZATIONS.md — optimization log ✅
 - [x] TESTING_CHECKLIST.md — testing requirements ✅
-- [ ] Supabase project created (name: `hersafestay-prod`)
-- [ ] PostGIS extension enabled on Supabase
-- [ ] Database schema migrations run (all 4 tables + indexes)
-- [ ] 5 MVP cities seeded into `cities` table
-- [ ] `.env.local` created with Supabase keys
+- [ ] Supabase project created (name: `hersafestay-prod`) — ⚠️ Run SQL migrations to complete
+- [ ] PostGIS extension enabled on Supabase — ⚠️ Run 001_enable_postgis.sql
+- [ ] Database schema migrations run (all 4 tables + indexes) — ⚠️ Run 002_create_tables.sql
+- [ ] Barcelona seed data inserted — ⚠️ Run supabase/seed/barcelona.sql
+- [x] `.env.local` created with Supabase keys ✅
 - [ ] Supabase keys added to Vercel environment variables
 - [ ] Google Cloud project created with billing enabled
 - [ ] Maps JavaScript API + Geocoding API + Places API enabled
@@ -61,13 +61,66 @@
 > Can execute `SELECT * FROM cities` and see Barcelona, Bangkok, Paris, London, NYC.
 > Google Maps API key works without watermark.
 
-**Notes / Blockers:**
-> _[Add notes as you go]_
+**Notes:**
+> Day 1 delivered documentation only. Day 2 picked up the database infrastructure work.
 
 ---
 
-### Day 2 — Google Maps Integration
+### Day 2 — Database Infrastructure + Supabase Setup
 **Date:** April 5, 2026
+**Expert role:** Backend Engineer + Database Architect
+**Status:** ✅ Complete (code) — ⚠️ Run SQL migrations to fully activate
+
+**Goal:** Complete database infrastructure with PostGIS, Barcelona seed data, and verified connection.
+
+#### Deliverables
+
+- [x] `@supabase/supabase-js` installed ✅
+- [x] `.env.local` created with Supabase credentials ✅ (already in .gitignore via `.env*`)
+- [x] `lib/supabase.js` — Supabase client (public + admin) ✅
+- [x] `lib/database.js` — full data access layer (getSafetyZones, getCities, testConnection, etc.) ✅
+- [x] `supabase/migrations/001_enable_postgis.sql` — PostGIS + uuid-ossp ✅
+- [x] `supabase/migrations/002_create_tables.sql` — all 4 tables + GIST indexes + 3 RPC functions ✅
+- [x] `supabase/seed/barcelona.sql` — 1 city + 5 zones + 15 properties with real coordinates ✅
+- [x] `app/test-db/page.js` — visual test page at /test-db ✅
+- [x] `supabase/README.md` — step-by-step migration instructions ✅
+- [x] SOLUTIONS.md updated (SOLUTION-019, SOLUTION-020) ✅
+- [x] OPTIMIZATIONS.md updated (OPT-011 GIST indexes) ✅
+- [ ] ⚠️ Run SQL in Supabase Dashboard (see supabase/README.md for exact steps)
+- [ ] ⚠️ Verify /test-db page shows 5 zones after running migrations
+
+**Barcelona zones (seed data):**
+| Zone | Safety Level | Score | Color |
+|------|-------------|-------|-------|
+| Eixample | Safe | 9.0 | #2D6A4F |
+| Gràcia | Safe | 9.0 | #2D6A4F |
+| Barceloneta | Safe | 8.0 | #2D6A4F |
+| Gothic Quarter | Caution | 6.0 | #F4A261 |
+| El Raval | Avoid | 4.0 | #E63946 |
+
+**Key technical decisions:**
+- PostGIS GEOGRAPHY(POLYGON, 4326) for zone polygons — all coordinates LONGITUDE FIRST
+- `get_zones_for_city()` RPC function converts PostGIS geography → GeoJSON in SQL (avoids binary blob in JS)
+- GIST indexes on all geography columns (OPT-011)
+- `lib/database.js` uses `.rpc()` for zone fetching, direct `.from()` for scalar queries
+
+**Testing requirements:**
+- [ ] Run: `SELECT * FROM get_zones_for_city('barcelona')` → 5 rows with real coordinates
+- [ ] Open http://localhost:3000/test-db → green Connected badge, 5 zone cards visible
+- [ ] Zone cards show score breakdown bars and PostGIS geometry type
+
+**Success criteria:**
+> /test-db shows: Connected + Barcelona city + 5 colored zone cards with safety scores.
+> Each zone card has score breakdown, tips, and confirms GeoJSON geometry is present.
+
+**Notes:**
+> SQL migrations must be run manually in Supabase Dashboard SQL Editor.
+> See supabase/README.md for exact step-by-step instructions.
+
+---
+
+### Day 3 (original Day 2) — Google Maps Integration
+**Date:** April 6, 2026
 **Expert role:** Frontend Map Engineer
 **Status:** ⏳
 
@@ -75,8 +128,7 @@
 
 #### Deliverables
 
-- [ ] Install `@react-google-maps/api` and `@supabase/supabase-js`
-- [ ] `lib/supabase.js` — Supabase client setup
+- [ ] Install `@react-google-maps/api`
 - [ ] `lib/safetyColors.js` — safety color constants
 - [ ] `lib/mapStyles.js` — custom Google Maps style JSON (cream base, no POI clutter)
 - [ ] `components/map/MapLoadingState.jsx` — skeleton loading state
