@@ -126,8 +126,8 @@ const SAFETY_TIPS = [
 ];
 
 const SAFETY_CONFIG = {
-  "Very Safe": { bg: "#dcfce7", color: "#166534", border: "#bbf7d0", dot: "#22c55e", Icon: ShieldCheck },
-  Safe: { bg: "#dbeafe", color: "#1e40af", border: "#bfdbfe", dot: "#3b82f6", Icon: Shield },
+  "Very Safe": { bg: "#d4eddd", color: "#2D6A4F", border: "#a8d5ba", dot: "#2D6A4F", Icon: ShieldCheck },
+  Safe: { bg: "#e5f5ea", color: "#2D6A4F", border: "#b8dfc5", dot: "#2D6A4F", Icon: Shield },
   Moderate: { bg: "#fef3c7", color: "#92400e", border: "#fde68a", dot: "#f59e0b", Icon: AlertTriangle },
 };
 
@@ -138,8 +138,8 @@ const COMING_SOON = [
     tagline: "Navigate cities with confidence",
     description: "Find the safest transportation options—vetted train routes, reliable bus networks, trusted ride services, and women-friendly transport times.",
     badge: "Coming Q3 2026",
-    accent: "#db2777",
-    iconBg: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)",
+    accent: "#2D6A4F",
+    iconBg: "linear-gradient(135deg, #d4eddd 0%, #a8d5ba 100%)",
   },
   {
     name: "HerSafeNight",
@@ -263,7 +263,7 @@ function SurveyPopup({ onClose }) {
             padding: 0,
           }}
         >
-          <X size={14} color="#9d174d" />
+          <X size={14} color="#e11d48" />
         </button>
 
         {/* Icon */}
@@ -286,7 +286,7 @@ function SurveyPopup({ onClose }) {
           style={{
             fontSize: "18px",
             fontWeight: "700",
-            color: "#1c1917",
+            color: "#2B2D42",
             marginBottom: "8px",
             fontFamily: "inherit",
           }}
@@ -356,13 +356,16 @@ function ComingSoonCard({ product }) {
       style={{
         background: "white",
         borderRadius: "20px",
-        border: "1px solid #fce7f3",
+        borderTop: "3px solid #2D6A4F",
+        borderRight: hovered ? "1px solid #a8d5ba" : "1px solid #e5f5ea",
+        borderBottom: hovered ? "1px solid #a8d5ba" : "1px solid #e5f5ea",
+        borderLeft: hovered ? "1px solid #a8d5ba" : "1px solid #e5f5ea",
         padding: "36px 30px 32px",
         display: "flex",
         flexDirection: "column",
         gap: "18px",
         boxShadow: hovered
-          ? "0 24px 48px rgba(219,39,119,0.12), 0 4px 12px rgba(0,0,0,0.05)"
+          ? "0 24px 48px rgba(45,106,79,0.12), 0 4px 12px rgba(0,0,0,0.05)"
           : "0 2px 12px rgba(0,0,0,0.05)",
         transform: hovered ? "translateY(-6px)" : "translateY(0)",
         transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -403,7 +406,7 @@ function ComingSoonCard({ product }) {
 
       {/* Name + tagline */}
       <div>
-        <h3 style={{ fontSize: "22px", fontWeight: "700", color: "#1c1917", marginBottom: "6px", fontFamily: "inherit" }}>
+        <h3 style={{ fontSize: "22px", fontWeight: "700", color: "#2B2D42", marginBottom: "6px", fontFamily: "inherit" }}>
           {name}
         </h3>
         <p style={{ fontSize: "16px", color: accent, fontWeight: "600" }}>{tagline}</p>
@@ -489,7 +492,7 @@ function AccommodationCard({ acc, idx }) {
             boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
           }}
         >
-          <span style={{ fontSize: "23px", fontWeight: "700", color: "#1c1917", fontFamily: "inherit" }}>
+          <span style={{ fontSize: "23px", fontWeight: "700", color: "#2B2D42", fontFamily: "inherit" }}>
             ${acc.price}
           </span>
           <span style={{ fontSize: "14px", color: "#78716c" }}>/night</span>
@@ -504,14 +507,14 @@ function AccommodationCard({ acc, idx }) {
             width: "30px",
             height: "30px",
             borderRadius: "50%",
-            background: acc.accentColor,
+            background: "#e11d48",
             color: "white",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: "14px",
             fontWeight: "700",
-            boxShadow: `0 2px 8px ${acc.accentColor}66`,
+            boxShadow: "0 2px 8px rgba(225,29,72,0.5)",
           }}
         >
           {acc.id}
@@ -527,7 +530,7 @@ function AccommodationCard({ acc, idx }) {
                 fontWeight: "700",
                 textTransform: "uppercase",
                 letterSpacing: "0.07em",
-                color: "#9d174d",
+                color: "#e11d48",
                 background: "#fff1f5",
                 padding: "3px 9px",
                 borderRadius: "4px",
@@ -538,7 +541,7 @@ function AccommodationCard({ acc, idx }) {
             <MapPin size={14} color="#9ca3af" />
             <span style={{ fontSize: "16px", color: "#6b7280" }}>{acc.area}, Bangkok</span>
           </div>
-          <h3 style={{ fontSize: "21px", fontWeight: "600", color: "#1c1917", lineHeight: "1.3", fontFamily: "inherit" }}>
+          <h3 style={{ fontSize: "21px", fontWeight: "600", color: "#2B2D42", lineHeight: "1.3", fontFamily: "inherit" }}>
             {acc.name}
           </h3>
         </div>
@@ -546,10 +549,10 @@ function AccommodationCard({ acc, idx }) {
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
             <Star size={16} fill="#f59e0b" stroke="#f59e0b" />
-            <span style={{ fontWeight: "600", fontSize: "17px", color: "#1c1917" }}>{acc.stars}</span>
+            <span style={{ fontWeight: "600", fontSize: "17px", color: "#2B2D42" }}>{acc.stars}</span>
             <span style={{ fontSize: "14px", color: "#78716c" }}>({acc.reviews.toLocaleString()})</span>
           </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#9d174d" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "14px", color: "#e11d48" }}>
             <UserCheck size={16} />
             <strong>{acc.womenReviews}</strong>&nbsp;women reviewed
           </span>
@@ -561,7 +564,7 @@ function AccommodationCard({ acc, idx }) {
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
             {acc.safetyFeatures.map((f) => (
-              <span key={f} style={{ fontSize: "13px", padding: "3px 9px", background: "#f0fdf4", color: "#166534", borderRadius: "4px", border: "1px solid #bbf7d0" }}>
+              <span key={f} style={{ fontSize: "13px", padding: "3px 9px", background: "#d4eddd", color: "#2D6A4F", borderRadius: "4px", border: "1px solid #a8d5ba" }}>
                 {f}
               </span>
             ))}
@@ -585,7 +588,7 @@ function AccommodationCard({ acc, idx }) {
             gap: "6px",
             padding: "13px",
             borderRadius: "10px",
-            background: `linear-gradient(135deg, ${acc.accentColor}, #9d174d)`,
+            background: "linear-gradient(135deg, #e11d48, #9d174d)",
             color: "white",
             border: "none",
             cursor: "pointer",
@@ -619,17 +622,17 @@ function BangkokSafetyMap() {
   ];
 
   const zoneColors = {
-    "Very Safe": { fill: "#d1fae5", fillHover: "#a7f3d0", stroke: "#6ee7b7", text: "#065f46", sub: "#059669" },
-    Safe: { fill: "#dbeafe", fillHover: "#bfdbfe", stroke: "#93c5fd", text: "#1e40af", sub: "#3b82f6" },
+    "Very Safe": { fill: "#d4eddd", fillHover: "#a8d5ba", stroke: "#6dbf88", text: "#1a4731", sub: "#2D6A4F" },
+    Safe: { fill: "#e5f5ea", fillHover: "#c2e0ca", stroke: "#8cc7a0", text: "#2D6A4F", sub: "#3d8a65" },
     Moderate: { fill: "#fef3c7", fillHover: "#fde68a", stroke: "#fcd34d", text: "#92400e", sub: "#b45309" },
   };
 
   const hotels = [
-    { id: 1, cx: 220, cy: 130, color: "#e11d48" },
-    { id: 2, cx: 318, cy: 140, color: "#7c3aed" },
-    { id: 3, cx: 220, cy: 258, color: "#b45309" },
-    { id: 4, cx: 220, cy: 196, color: "#0f766e" },
-    { id: 5, cx: 126, cy: 205, color: "#1d4ed8" },
+    { id: 1, cx: 220, cy: 130 },
+    { id: 2, cx: 318, cy: 140 },
+    { id: 3, cx: 220, cy: 258 },
+    { id: 4, cx: 220, cy: 196 },
+    { id: 5, cx: 126, cy: 205 },
   ];
 
   const hoveredData = zones.find((z) => z.id === hoveredZone);
@@ -666,20 +669,24 @@ function BangkokSafetyMap() {
         })}
 
         {hotels.map((h) => (
-          <g key={h.id}>
-            <circle cx={h.cx} cy={h.cy + 3} r="13" fill="rgba(0,0,0,0.18)" />
-            <circle cx={h.cx} cy={h.cy} r="16" fill={h.color} opacity="0.18" />
-            <circle cx={h.cx} cy={h.cy} r="13" fill={h.color} />
-            <circle cx={h.cx} cy={h.cy} r="13" fill="none" stroke="white" strokeWidth="2.5" />
-            <text x={h.cx} y={h.cy + 4} textAnchor="middle" fontSize="11" fontWeight="800" fill="white">{h.id}</text>
+          <g key={h.id} transform={`translate(${h.cx}, ${h.cy})`}>
+            {/* Drop shadow */}
+            <ellipse cx="0" cy="2" rx="7" ry="4" fill="rgba(0,0,0,0.18)" />
+            {/* Pin body */}
+            <path d="M0,0 C-2,-5 -9,-7 -9,-14 A9,9,0,1,1,9,-14 C9,-7 2,-5 0,0 Z" fill="#e11d48" />
+            {/* Shield */}
+            <path d="M0,-19 C1.5,-19.5 3.5,-18.5 3.5,-17 L3.5,-11 Q3.5,-7 0,-6.5 Q-3.5,-7 -3.5,-11 L-3.5,-17 C-3.5,-18.5 -1.5,-19.5 0,-19 Z" fill="#FFF8F0" />
+            {/* Number label below pin */}
+            <text x="0" y="11" textAnchor="middle" fontSize="7" fontWeight="800" fill="#2D6A4F"
+              paintOrder="stroke" stroke="white" strokeWidth="2.5" strokeLinejoin="round">{h.id}</text>
           </g>
         ))}
 
         <g transform="translate(420, 28)">
           <circle cx="0" cy="0" r="12" fill="white" opacity="0.8" />
-          <text x="0" y="-4" textAnchor="middle" fontSize="9" fontWeight="700" fill="#9d174d">N</text>
-          <line x1="0" y1="-1" x2="0" y2="7" stroke="#9d174d" strokeWidth="1" />
-          <polygon points="0,-10 -2.5,-1 0,0 2.5,-1" fill="#9d174d" />
+          <text x="0" y="-4" textAnchor="middle" fontSize="9" fontWeight="700" fill="#2D6A4F">N</text>
+          <line x1="0" y1="-1" x2="0" y2="7" stroke="#2D6A4F" strokeWidth="1" />
+          <polygon points="0,-10 -2.5,-1 0,0 2.5,-1" fill="#2D6A4F" />
         </g>
       </svg>
 
@@ -696,7 +703,7 @@ function BangkokSafetyMap() {
             padding: "4px 12px",
             fontSize: "13px",
             fontWeight: "600",
-            color: "#1c1917",
+            color: "#2B2D42",
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             border: "1px solid #fce7f3",
             whiteSpace: "nowrap",
@@ -766,8 +773,8 @@ export default function Page() {
   }
 
   function fieldBg(name) {
-    if (focusedField === name) return "#fff7f9";
-    if (hoveredField === name) return "#fffbfc";
+    if (focusedField === name) return "#FFF8F2";
+    if (hoveredField === name) return "#FFFCF8";
     return "transparent";
   }
 
@@ -787,7 +794,7 @@ export default function Page() {
     border: "none",
     outline: "none",
     fontSize: "16px",
-    color: "#1c1917",
+    color: "#2B2D42",
     fontFamily: "inherit",
     background: "transparent",
     width: "100%",
@@ -812,35 +819,29 @@ export default function Page() {
           justifyContent: "space-between",
           background: "rgba(255,255,255,0.92)",
           backdropFilter: "blur(14px)",
-          borderBottom: "1px solid rgba(252,231,243,0.9)",
+          borderBottom: "1px solid rgba(255,200,150,0.4)",
           position: "sticky",
           top: 0,
           zIndex: 200,
         }}
       >
         {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "16px" }}>
-          <div
-            style={{
-              width: isMobile ? "44px" : isTablet ? "54px" : "66px",
-              height: isMobile ? "44px" : isTablet ? "54px" : "66px",
-              borderRadius: isMobile ? "10px" : "14px",
-              background: "linear-gradient(135deg, #e11d48, #9d174d)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 6px 20px rgba(225,29,72,0.35)",
-              flexShrink: 0,
-            }}
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "16px", textDecoration: "none" }}>
+          <svg
+            viewBox="0 0 48 60"
+            width={isMobile ? 32 : isTablet ? 40 : 50}
+            height={isMobile ? 40 : isTablet ? 50 : 62}
+            style={{ display: "block", flexShrink: 0, filter: "drop-shadow(0 4px 10px rgba(225,29,72,0.4))" }}
           >
-            <Shield size={isMobile ? 24 : isTablet ? 30 : 36} color="white" fill="rgba(255,255,255,0.25)" />
-          </div>
+            <path d="M24,4 C14,4 6,12 6,22 C6,35 24,56 24,56 C24,56 42,35 42,22 C42,12 34,4 24,4 Z" fill="#e11d48" stroke="#e11d48" strokeWidth="1.5" />
+            <path d="M24,16 L16,19 L16,27 Q16,33 24,37 Q32,33 32,27 L32,19 Z" fill="#FFF8F0" />
+          </svg>
           <div>
             <div
               style={{
                 fontSize: isMobile ? "22px" : isTablet ? "26px" : "32px",
                 fontWeight: "700",
-                color: "#1c1917",
+                color: "#2B2D42",
                 lineHeight: "1",
                 letterSpacing: "-0.02em",
               }}
@@ -851,7 +852,7 @@ export default function Page() {
               <div
                 style={{
                   fontSize: isTablet ? "12px" : "15px",
-                  color: "#9d174d",
+                  color: "#2D6A4F",
                   fontWeight: "500",
                   letterSpacing: "0.06em",
                   textTransform: "uppercase",
@@ -862,7 +863,7 @@ export default function Page() {
               </div>
             )}
           </div>
-        </div>
+        </a>
 
         {/* Desktop / Tablet nav */}
         {!isMobile && (
@@ -874,7 +875,7 @@ export default function Page() {
                   key={item}
                   href="#"
                   style={{ fontSize: isTablet ? "15px" : "18px", color: "#57534e", fontWeight: "500", transition: "color 0.2s" }}
-                  onMouseEnter={(e) => (e.target.style.color = "#e11d48")}
+                  onMouseEnter={(e) => (e.target.style.color = "#2D6A4F")}
                   onMouseLeave={(e) => (e.target.style.color = "#57534e")}
                 >
                   {item}
@@ -946,7 +947,7 @@ export default function Page() {
                     display: "block",
                     width: "18px",
                     height: "2px",
-                    background: "#1c1917",
+                    background: "#2B2D42",
                     borderRadius: "2px",
                     transition: "all 0.2s",
                     transform:
@@ -985,9 +986,9 @@ export default function Page() {
                   display: "block",
                   padding: "16px 20px",
                   fontSize: "17px",
-                  color: "#1c1917",
+                  color: "#2B2D42",
                   fontWeight: "500",
-                  borderBottom: "1px solid #fdf2f8",
+                  borderBottom: "1px solid #FFF4E8",
                   minHeight: "52px",
                 }}
               >
@@ -1017,14 +1018,14 @@ export default function Page() {
                     gap: "6px",
                     padding: "8px 22px",
                     borderRadius: "999px",
-                    background: "rgba(225,29,72,0.07)",
-                    border: "1px solid rgba(225,29,72,0.15)",
+                    background: "rgba(45,106,79,0.07)",
+                    border: "1px solid rgba(45,106,79,0.18)",
                     marginBottom: "16px",
                     alignSelf: "center",
                   }}
                 >
-                  <ShieldCheck size={18} color="#e11d48" />
-                  <span style={{ fontSize: "16px", color: "#9d174d", fontWeight: "600" }}>
+                  <ShieldCheck size={18} color="#2D6A4F" />
+                  <span style={{ fontSize: "16px", color: "#2D6A4F", fontWeight: "600" }}>
                     200,000+ safety-verified accommodations
                   </span>
                 </div>
@@ -1033,7 +1034,7 @@ export default function Page() {
                   style={{
                     fontSize: "clamp(38px, 4vw, 60px)",
                     fontWeight: "700",
-                    color: "#1c1917",
+                    color: "#2B2D42",
                     lineHeight: "1.12",
                     marginBottom: "14px",
                     letterSpacing: "-0.025em",
@@ -1064,13 +1065,13 @@ export default function Page() {
                   }}
                 >
                   {[
-                    { val: "200K+", label: "Safe Listings" },
-                    { val: "1.2M+", label: "Women Reviewers" },
-                    { val: "98%", label: "Feel Safe" },
-                    { val: "140+", label: "Countries" },
-                  ].map(({ val, label }) => (
+                    { val: "200K+", label: "Safe Listings", color: "#e11d48" },
+                    { val: "1.2M+", label: "Women Reviewers", color: "#2D6A4F" },
+                    { val: "98%", label: "Feel Safe", color: "#e11d48" },
+                    { val: "140+", label: "Countries", color: "#2D6A4F" },
+                  ].map(({ val, label, color }) => (
                     <div key={label} style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "30px", fontWeight: "700", color: "#e11d48", lineHeight: "1" }}>{val}</div>
+                      <div style={{ fontSize: "30px", fontWeight: "700", color, lineHeight: "1" }}>{val}</div>
                       <div style={{ fontSize: "14px", color: "#78716c", marginTop: "4px" }}>{label}</div>
                     </div>
                   ))}
@@ -1105,7 +1106,7 @@ export default function Page() {
                       onMouseLeave={() => setHoveredField(null)}
                     >
                       <label style={labelStyle}>Check-in</label>
-                      <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} onFocus={() => setFocusedField("checkin")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkIn ? "#1c1917" : "#9ca3af", fontSize: "14px" }} />
+                      <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} onFocus={() => setFocusedField("checkin")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkIn ? "#2B2D42" : "#9ca3af", fontSize: "14px" }} />
                     </div>
                     <div
                       style={{ flex: 1, padding: "14px 14px", borderRight: "1.5px solid #e5e7eb", background: fieldBg("checkout"), transition: "background 0.15s", minHeight: "56px" }}
@@ -1113,7 +1114,7 @@ export default function Page() {
                       onMouseLeave={() => setHoveredField(null)}
                     >
                       <label style={labelStyle}>Check-out</label>
-                      <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} onFocus={() => setFocusedField("checkout")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkOut ? "#1c1917" : "#9ca3af", fontSize: "14px" }} />
+                      <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} onFocus={() => setFocusedField("checkout")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkOut ? "#2B2D42" : "#9ca3af", fontSize: "14px" }} />
                     </div>
                     <div style={{ display: "flex", flex: 1.5 }}>
                       <div
@@ -1154,7 +1155,7 @@ export default function Page() {
                       padding: "11px 24px",
                       borderRadius: "10px",
                       border: "1.5px solid rgba(225,29,72,0.35)",
-                      color: "#9d174d",
+                      color: "#e11d48",
                       fontSize: isMobile ? "14px" : "15px",
                       fontWeight: "600",
                       fontFamily: "inherit",
@@ -1163,8 +1164,8 @@ export default function Page() {
                       backdropFilter: "blur(4px)",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#fff1f5"; e.currentTarget.style.borderColor = "#e11d48"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(225,29,72,0.35)"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#e5f5ea"; e.currentTarget.style.borderColor = "#2A9D8F"; e.currentTarget.style.color = "#2A9D8F"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.7)"; e.currentTarget.style.borderColor = "rgba(225,29,72,0.35)"; e.currentTarget.style.color = "#e11d48"; }}
                   >
                     <Heart size={15} color="#e11d48" />
                     Help Shape HerSafeStay — 3 Min Survey
@@ -1221,7 +1222,7 @@ export default function Page() {
                   <label style={labelStyle}>Check-in</label>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     {!isMobile && <Calendar size={16} color="#e11d48" strokeWidth={2.5} />}
-                    <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} onFocus={() => setFocusedField("checkin")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkIn ? "#1c1917" : "#9ca3af", fontSize: isMobile ? "15px" : "16px" }} />
+                    <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} onFocus={() => setFocusedField("checkin")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkIn ? "#2B2D42" : "#9ca3af", fontSize: isMobile ? "15px" : "16px" }} />
                   </div>
                 </div>
                 <div
@@ -1232,7 +1233,7 @@ export default function Page() {
                   <label style={labelStyle}>Check-out</label>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     {!isMobile && <Calendar size={16} color="#e11d48" strokeWidth={2.5} />}
-                    <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} onFocus={() => setFocusedField("checkout")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkOut ? "#1c1917" : "#9ca3af", fontSize: isMobile ? "15px" : "16px" }} />
+                    <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} onFocus={() => setFocusedField("checkout")} onBlur={() => setFocusedField(null)} style={{ ...inputStyle, color: checkOut ? "#2B2D42" : "#9ca3af", fontSize: isMobile ? "15px" : "16px" }} />
                   </div>
                 </div>
               </div>
@@ -1276,7 +1277,7 @@ export default function Page() {
         >
           {/* Results header */}
           <div style={{ marginBottom: isMobile ? "20px" : "28px" }}>
-            <h2 style={{ fontSize: isMobile ? "22px" : "34px", fontWeight: "700", color: "#1c1917", letterSpacing: "-0.01em" }}>
+            <h2 style={{ fontSize: isMobile ? "22px" : "34px", fontWeight: "700", color: "#2B2D42", letterSpacing: "-0.01em" }}>
               {ACCOMMODATIONS.length} stays in {destination}
             </h2>
             <p style={{ fontSize: isMobile ? "14px" : "18px", color: "#78716c", marginTop: "4px" }}>
@@ -1312,13 +1313,13 @@ export default function Page() {
                   style={{
                     fontSize: isMobile ? "15px" : "17px",
                     fontWeight: "700",
-                    color: "#1c1917",
+                    color: "#2B2D42",
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
                   }}
                 >
-                  <MapPin size={isMobile ? 14 : 16} color="#e11d48" />
+                  <MapPin size={isMobile ? 14 : 16} color="#2D6A4F" />
                   Safety Map — Bangkok
                 </h3>
                 <p style={{ fontSize: isMobile ? "12px" : "13px", color: "#78716c", marginTop: "3px" }}>
@@ -1327,8 +1328,8 @@ export default function Page() {
               </div>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
                 {[
-                  { label: "Very Safe", bg: "#dcfce7", border: "#6ee7b7" },
-                  { label: "Safe", bg: "#dbeafe", border: "#93c5fd" },
+                  { label: "Very Safe", bg: "#d4eddd", border: "#6dbf88" },
+                  { label: "Safe", bg: "#e5f5ea", border: "#8cc7a0" },
                   { label: "Moderate", bg: "#fef3c7", border: "#fcd34d" },
                 ].map((item) => (
                   <div key={item.label} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
@@ -1390,8 +1391,8 @@ export default function Page() {
                     gap: "8px",
                   }}
                 >
-                  <Shield size={18} color="#e11d48" />
-                  <h3 style={{ fontSize: isMobile ? "17px" : "21px", fontWeight: "700", color: "#1c1917" }}>
+                  <Shield size={18} color="#2D6A4F" />
+                  <h3 style={{ fontSize: isMobile ? "17px" : "21px", fontWeight: "700", color: "#2B2D42" }}>
                     Safety Tips — Bangkok
                   </h3>
                 </div>
@@ -1411,7 +1412,7 @@ export default function Page() {
                         alignItems: "flex-start",
                         gap: "10px",
                         padding: isMobile ? "10px 0" : "12px 0",
-                        borderBottom: i < SAFETY_TIPS.length - 1 ? "1px solid #fdf2f8" : "none",
+                        borderBottom: i < SAFETY_TIPS.length - 1 ? "1px solid #FFF4E8" : "none",
                       }}
                     >
                       <span style={{ fontSize: isMobile ? "18px" : "21px", flexShrink: 0 }}>{tip.icon}</span>
@@ -1446,13 +1447,13 @@ export default function Page() {
                 gap: "6px",
                 padding: "6px 18px",
                 borderRadius: "999px",
-                background: "rgba(219,39,119,0.07)",
-                border: "1px solid rgba(219,39,119,0.15)",
+                background: "rgba(45,106,79,0.07)",
+                border: "1px solid rgba(45,106,79,0.18)",
                 marginBottom: "16px",
               }}
             >
-              <Shield size={14} color="#db2777" />
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "#db2777", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              <Shield size={14} color="#2D6A4F" />
+              <span style={{ fontSize: "13px", fontWeight: "700", color: "#2D6A4F", letterSpacing: "0.06em", textTransform: "uppercase" }}>
                 Coming Soon
               </span>
             </div>
@@ -1460,7 +1461,7 @@ export default function Page() {
               style={{
                 fontSize: isMobile ? "clamp(26px, 7vw, 36px)" : "clamp(32px, 4vw, 48px)",
                 fontWeight: "700",
-                color: "#1c1917",
+                color: "#2B2D42",
                 lineHeight: "1.2",
                 letterSpacing: "-0.02em",
                 marginBottom: "14px",
@@ -1468,7 +1469,7 @@ export default function Page() {
               }}
             >
               Beyond Accommodations:{" "}
-              <span style={{ color: "#db2777" }}>The HerSafe Suite</span>
+              <span style={{ color: "#2D6A4F" }}>The HerSafe Suite</span>
             </h2>
             <p
               style={{
@@ -1509,7 +1510,7 @@ export default function Page() {
               }}
             >
               Which product should we build first?{" "}
-              <span style={{ color: "#9d174d", fontWeight: "600" }}>Tell us in our quick survey.</span>
+              <span style={{ color: "#e11d48", fontWeight: "600" }}>Tell us in our quick survey.</span>
             </p>
             <a
               href={SURVEY_URL}
@@ -1521,13 +1522,13 @@ export default function Page() {
                 gap: "8px",
                 padding: "13px 28px",
                 borderRadius: "12px",
-                background: "linear-gradient(135deg, #db2777, #9d174d)",
+                background: "linear-gradient(135deg, #e11d48, #9d174d)",
                 color: "white",
                 fontSize: isMobile ? "15px" : "16px",
                 fontWeight: "600",
                 fontFamily: "inherit",
                 textDecoration: "none",
-                boxShadow: "0 4px 14px rgba(219,39,119,0.3)",
+                boxShadow: "0 4px 14px rgba(225,29,72,0.3)",
                 transition: "opacity 0.2s",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
@@ -1551,12 +1552,12 @@ export default function Page() {
               margin: "0 auto",
             }}
           >
-            <Shield size={28} color="#db2777" style={{ marginBottom: "12px" }} />
+            <Shield size={28} color="#2D6A4F" style={{ marginBottom: "12px" }} />
             <h3
               style={{
                 fontSize: isMobile ? "20px" : "24px",
                 fontWeight: "700",
-                color: "#1c1917",
+                color: "#2B2D42",
                 marginBottom: "8px",
                 fontFamily: "inherit",
               }}
@@ -1612,12 +1613,12 @@ export default function Page() {
                     border: "1.5px solid #e5e7eb",
                     fontSize: "16px",
                     fontFamily: "inherit",
-                    color: "#1c1917",
+                    color: "#2B2D42",
                     outline: "none",
                     background: "#fafafa",
                     minHeight: "50px",
                   }}
-                  onFocus={(e) => { e.target.style.borderColor = "#db2777"; e.target.style.background = "#fff7f9"; }}
+                  onFocus={(e) => { e.target.style.borderColor = "#e11d48"; e.target.style.background = "#FFF8F2"; }}
                   onBlur={(e) => { e.target.style.borderColor = "#e5e7eb"; e.target.style.background = "#fafafa"; }}
                 />
                 <button
@@ -1625,7 +1626,7 @@ export default function Page() {
                   style={{
                     padding: "14px 28px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, #db2777, #9d174d)",
+                    background: "linear-gradient(135deg, #e11d48, #9d174d)",
                     color: "white",
                     border: "none",
                     cursor: "pointer",
@@ -1634,7 +1635,7 @@ export default function Page() {
                     fontFamily: "inherit",
                     whiteSpace: "nowrap",
                     minHeight: "50px",
-                    boxShadow: "0 4px 14px rgba(219,39,119,0.3)",
+                    boxShadow: "0 4px 14px rgba(225,29,72,0.3)",
                     transition: "opacity 0.2s",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
@@ -1648,6 +1649,90 @@ export default function Page() {
 
         </div>
       </section>
+
+      {/* ── Footer ── */}
+      <footer
+        style={{
+          background: "#2D6A4F",
+          padding: isMobile ? "40px 16px 32px" : "56px 60px 40px",
+          color: "#FFF8F0",
+        }}
+      >
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: isMobile ? "1fr" : isTablet ? "1fr 1fr" : "2fr 1fr 1fr 1fr",
+              gap: isMobile ? "32px" : "40px",
+              marginBottom: "40px",
+            }}
+          >
+            {/* Brand column */}
+            <div>
+              <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "10px", textDecoration: "none", marginBottom: "14px" }}>
+                <svg viewBox="0 0 48 60" width="36" height="45" style={{ display: "block", flexShrink: 0 }}>
+                  <path d="M24,4 C14,4 6,12 6,22 C6,35 24,56 24,56 C24,56 42,35 42,22 C42,12 34,4 24,4 Z" fill="#e11d48" stroke="#e11d48" strokeWidth="1.5" />
+                  <path d="M24,16 L16,19 L16,27 Q16,33 24,37 Q32,33 32,27 L32,19 Z" fill="#FFF8F0" />
+                </svg>
+                <span style={{ fontSize: "22px", fontWeight: "700", color: "#FFF8F0", letterSpacing: "-0.01em" }}>HerSafeStay</span>
+              </a>
+              <p style={{ fontSize: "15px", color: "rgba(255,248,240,0.75)", lineHeight: "1.65", maxWidth: "260px" }}>
+                Every listing vetted for women&apos;s safety. Travel where you feel safe and welcome.
+              </p>
+            </div>
+
+            {/* Links */}
+            {[
+              { heading: "Explore", links: ["Destinations", "Safety Guides", "Community", "About Us"] },
+              { heading: "Products", links: ["HerSafeStay", "HerSafeWay", "HerSafeNight", "HerSafeSweat"] },
+              { heading: "Company", links: ["Our Mission", "Privacy Policy", "Terms of Service", "Contact"] },
+            ].map(({ heading, links }) => (
+              <div key={heading}>
+                <h4 style={{ fontSize: "13px", fontWeight: "700", color: "rgba(255,248,240,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "14px" }}>
+                  {heading}
+                </h4>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {links.map((link) => (
+                    <li key={link}>
+                      <a
+                        href="#"
+                        style={{ fontSize: "15px", color: "rgba(255,248,240,0.8)", textDecoration: "none", transition: "color 0.2s" }}
+                        onMouseEnter={(e) => (e.target.style.color = "#e11d48")}
+                        onMouseLeave={(e) => (e.target.style.color = "rgba(255,248,240,0.8)")}
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom bar */}
+          <div
+            style={{
+              borderTop: "1px solid rgba(255,248,240,0.15)",
+              paddingTop: "24px",
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <p style={{ fontSize: "14px", color: "rgba(255,248,240,0.5)" }}>
+              © 2026 HerSafeStay. Built for women who explore.
+            </p>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <ShieldCheck size={14} color="#e11d48" />
+              <span style={{ fontSize: "13px", color: "rgba(255,248,240,0.6)", fontWeight: "500" }}>
+                Every listing safety-verified
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Survey popup — renders after 30s, once per session */}
       {showSurveyPopup && (

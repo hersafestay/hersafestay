@@ -19,6 +19,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-7EH09YFVSE"
           strategy="afterInteractive"

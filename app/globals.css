@@ -13,7 +13,7 @@ body {
 }
 
 body {
-  background: #fff1f5;
+  background: #FFF8F0;
 }
 
 a {
@@ -69,12 +69,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #fdf2f8;
+  background: #FFF4E8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #fbcfe8;
+  background: #FFCBA4;
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #f9a8d4;
+  background: #FF6B6B;
 }
