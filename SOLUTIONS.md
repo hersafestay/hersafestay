@@ -535,5 +535,37 @@ await supabase.rpc('get_zones_for_city', { city_id: 'barcelona' })   // ✗ wron
 
 ---
 
-*Last updated: 2026-04-04*
-*Solutions: 18*
+### SOLUTION-021: GeoJSON coordinate order ([lng,lat] → {lat,lng})
+
+**Problem:** Polygons render in wrong location or not at all.
+
+**Root cause:** GeoJSON Polygon uses [longitude, latitude] order (X before Y). Google Maps Polygon `paths` expects `{ lat, lng }` (Y before X). Swapping these places zones in a mirror location.
+
+**Solution:** `geoJsonToGooglePath()` in `lib/mapUtils.js`:
+
+```javascript
+export function geoJsonToGooglePath(geoJsonGeometry) {
+  if (!geoJsonGeometry?.coordinates?.[0]) return [];
+  // GeoJSON: [longitude, latitude] — longitude FIRST
+  return geoJsonGeometry.coordinates[0].map(([lng, lat]) => ({ lat, lng }));
+}
+```
+
+**Prevention:** Comment every coordinate transform: `// [lng, lat] → { lat, lng }`.
+
+---
+
+### SOLUTION-022: InfoWindow rendered inside iframe (iOS CSS isolation)
+
+**Problem:** Zone InfoWindow content unstyled / tiny on iOS Safari.
+
+**Root cause:** Google Maps InfoWindow content renders inside an iframe on some iOS Safari versions, which isolates it from the parent document's CSS stylesheets.
+
+**Solution:** Use 100% inline styles on all InfoWindow content (SOLUTION-012 confirmed for Day 3). Never use className inside `<InfoWindow>`.
+
+**Prevention:** Already documented as SOLUTION-012. ZoneInfoContent component uses inline styles only.
+
+---
+
+*Last updated: 2026-04-06*
+*Solutions: 22*

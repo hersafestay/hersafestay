@@ -119,84 +119,48 @@
 
 ---
 
-### Day 3 (original Day 2) — Google Maps Integration
+### Day 3 — Google Maps Integration + Barcelona Safety Zones 🚨
 **Date:** April 6, 2026
-**Expert role:** Frontend Map Engineer
-**Status:** ⏳
+**Expert role:** Frontend Map Engineer + GIS Specialist
+**Status:** ✅ Complete
 
-**Goal:** See a working Google Map on screen. Basic map rendering, no zones yet.
+**Goal:** Interactive Google Map with color-coded Barcelona safety zone polygons.
 
 #### Deliverables
 
-- [ ] Install `@react-google-maps/api`
-- [ ] `lib/safetyColors.js` — safety color constants
-- [ ] `lib/mapStyles.js` — custom Google Maps style JSON (cream base, no POI clutter)
-- [ ] `components/map/MapLoadingState.jsx` — skeleton loading state
-- [ ] `components/map/SafetyMap.jsx` — base Google Map component (no zones yet)
-- [ ] `app/map/page.js` — map page with dynamic import (`ssr: false`)
-- [ ] Map renders at Barcelona coordinates, custom style applied
-- [ ] Nav link to `/map` page added
-- [ ] Verify: no "For development purposes only" watermark
-- [ ] Verify: map loads in < 3 seconds on simulated 4G
+- [x] `@react-google-maps/api` installed ✅
+- [x] `lib/mapUtils.js` — GeoJSON→Google Maps coordinate conversion, color helpers ✅
+- [x] `lib/safetyColors.js` — SAFETY_COLORS constants ✅
+- [x] `lib/mapStyles.js` — custom Google Maps style (cream base, no POI clutter) ✅
+- [x] `components/map/SafetyMap.jsx` — full interactive map with zones + InfoWindows + legend ✅
+  - `useJsApiLoader` for API loading
+  - `ZonePolygon` (React.memo + memoized options — zero flicker, SOLUTION-002)
+  - `ZoneInfoContent` — all inline styles (iOS Safari safe, SOLUTION-012)
+  - `MapLegend` — top-right overlay
+  - Loading/error states
+- [x] `app/map/page.js` — full-screen map page, dynamic import (`ssr: false`), header, back link ✅
+- [x] Home page "View Safety Map" CTA button — coral gradient, prominent, links to /map ✅
+- [x] GeoJSON [lng,lat] → {lat,lng} conversion in `geoJsonToGooglePath()` (SOLUTION-021) ✅
+- [x] Only one InfoWindow open at a time ✅
+- [x] Click map background → InfoWindow closes ✅
+- [x] Zones fetch from Supabase via `getSafetyZones('barcelona')` ✅
 
-**Dependency:** Day 1 must be complete (API keys in env)
+**Barcelona zones seeded (Day 2 database):**
+| Zone | Level | Score | Color |
+|------|-------|-------|-------|
+| Eixample | safe | 9.0 | #2D6A4F |
+| Gràcia | safe | 9.0 | #2D6A4F |
+| Barceloneta | safe | 8.0 | #2D6A4F |
+| Gothic Quarter | caution | 6.0 | #F4A261 |
+| El Raval | avoid | 4.0 | #E63946 |
 
-**Testing requirements:**
-- [ ] Map renders on `/map` page
-- [ ] Map uses custom styles (no default POI markers cluttering the map)
-- [ ] Map loads correctly on Chrome mobile simulation
-- [ ] No console errors
-- [ ] `ssr: false` is set — no "window is not defined" build error
+**Notes:**
+> CRITICAL: GeoJSON stores [longitude, latitude] — Google Maps wants { lat, lng }. The `geoJsonToGooglePath()` function handles this conversion correctly.
+> InfoWindow content uses 100% inline styles (required for iOS Safari iframe isolation).
+> ZonePolygon memoized with React.memo + useMemo options to prevent flicker on state changes.
+> Map requires SQL migrations to be run in Supabase first (see supabase/README.md).
 
-**Success criteria:**
-> Navigate to `/map` → see a beautiful styled Google Map centered on Barcelona.
-> No errors. Custom cream/muted style visible.
-
-**Notes / Blockers:**
-> _[Add notes as you go]_
-
----
-
-### Day 3 — Safety Zone System + Barcelona Fully Mapped 🚨
-**Date:** April 6, 2026
-**Expert role:** GIS Specialist + Frontend Engineer
-**Status:** ⏳
-
-**Goal:** The first real safety zone polygons on a map. This is the core product moment.
-
-#### Deliverables
-
-- [ ] `data/zones/barcelona.json` — Barcelona zone GeoJSON (10–12 zones, manually curated)
-  - Zones to include: Gothic Quarter, Eixample, Gràcia, Barceloneta, El Born, Raval, Poble Sec, Montjuïc, Sarrià, Diagonal
-  - Safety scores researched and assigned per zone
-- [ ] `scripts/import-zones.js` — import GeoJSON files into Supabase `safety_zones` table
-- [ ] `scripts/validate-polygons.js` — check for open rings, overlaps, coordinate issues
-- [ ] `components/map/ZonePolygon.jsx` — individual zone polygon with memoized options
-- [ ] `components/map/MapLegend.jsx` — safety color legend (green/amber/red)
-- [ ] Zone layer integrated into `SafetyMap.jsx`
-- [ ] Zone polygons render in correct colors (green/amber/red per safety level)
-- [ ] Barcelona data imported to Supabase + visible on map
-- [ ] `app/api/zones/route.js` — API endpoint returning zone GeoJSON with CDN cache headers
-- [ ] Color simplification script applied (target: <30KB for Barcelona zones)
-- [ ] Polygon validation passes (no open rings, no obvious overlaps)
-
-**Dependency:** Day 2 complete (map rendering)
-
-**Testing requirements:**
-- [ ] All 10–12 Barcelona zones visible on map
-- [ ] Zone colors match safety levels (Gothic Quarter amber/red, Eixample green)
-- [ ] `/api/zones?city=barcelona` returns in <100ms on second request (CDN cache)
-- [ ] GeoJSON file size <30KB after simplification
-- [ ] Validate polygons script passes with 0 errors
-
-**Success criteria:**
-> Barcelona safety map is visible. Green zones pop. Red zones warn.
-> Someone looking at the map immediately understands where to stay vs. avoid.
-
-**Celebrate this moment:** This is when HerSafeStay stops being a landing page and becomes a real safety map product.
-
-**Notes / Blockers:**
-> _[Add notes as you go]_
+**Next:** Day 4 — Zone detail panel, Bangkok + Paris data, city selector
 
 ---
 

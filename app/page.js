@@ -1142,6 +1142,38 @@ export default function Page() {
                   </div>
                 </form>
 
+                {/* View Safety Map — primary CTA */}
+                <div style={{ marginTop: "20px", marginBottom: "4px" }}>
+                  <a
+                    href="/map"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: isMobile ? "14px 28px" : "16px 36px",
+                      borderRadius: "14px",
+                      background: "linear-gradient(135deg, #FF6B6B, #e85555)",
+                      color: "white",
+                      fontSize: isMobile ? "16px" : "18px",
+                      fontWeight: "700",
+                      fontFamily: "inherit",
+                      textDecoration: "none",
+                      boxShadow: "0 4px 20px rgba(255,107,107,0.35), 0 1px 4px rgba(0,0,0,0.08)",
+                      transition: "all 0.2s",
+                      letterSpacing: "-0.01em",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(255,107,107,0.45), 0 2px 8px rgba(0,0,0,0.1)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(255,107,107,0.35), 0 1px 4px rgba(0,0,0,0.08)"; }}
+                  >
+                    <span style={{ fontSize: "20px" }}>🗺️</span>
+                    View Barcelona Safety Map
+                    <span style={{ fontSize: "18px" }}>→</span>
+                  </a>
+                  <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#9ca3af" }}>
+                    5 neighborhoods · Color-coded safety zones · Click any area for details
+                  </p>
+                </div>
+
                 {/* Survey CTA */}
                 <div style={{ marginTop: "16px" }}>
                   <a

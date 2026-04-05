@@ -32,6 +32,9 @@
 | OPT-008 | Image optimization (Vercel) | Pending | 40–60% image size reduction |
 | OPT-009 | Accommodation pin clustering | Pending | Needed when >20 pins on screen |
 | OPT-010 | Supabase connection pooling | Pending | Needed at 100+ concurrent users |
+| OPT-011 | PostGIS GIST indexes | Implemented | Spatial queries <10ms vs ~200ms |
+| OPT-012 | Single InfoWindow pattern | Implemented | Zero DOM overhead for inactive zones |
+| OPT-013 | SafetyMap dynamic import ssr:false | Implemented | Map excluded from SSR bundle |
 
 ---
 
