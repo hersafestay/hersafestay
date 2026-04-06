@@ -164,49 +164,60 @@
 
 ---
 
-### Day 4 — Zone Interactions + Bangkok + Paris
-**Date:** April 7, 2026
-**Expert role:** Frontend Engineer + UX Designer
-**Status:** ⏳
+### Day 4 — Property Pins + Paris & Bangkok + City Selector
+**Date:** April 6, 2026
+**Expert role:** Frontend Engineer + Data Engineer
+**Status:** ✅ Complete
 
-**Goal:** Zones are interactive. Users can click to learn why a zone is rated as it is.
+**Goal:** Property markers on map, 3-city support (Barcelona + Paris + Bangkok), city selector in header.
 
 #### Deliverables
 
-- [ ] `components/map/ZoneDetail.jsx` — zone detail panel component
-  - Zone name, safety score (X/10), safety level badge
-  - Description text
-  - Safety tips list (women-specific)
-  - Score breakdown (crime 40%, reviews 30%, etc.)
-  - Data sources section ("Based on police data + 847 traveler reviews")
-  - Property count ("12 accommodations in this zone")
-- [ ] Zone click handler → opens ZoneDetail panel
-- [ ] Zone InfoWindow or bottom sheet implementation (mobile: bottom sheet)
-- [ ] `components/map/MapControls.jsx` — city selector dropdown
-- [ ] `data/zones/bangkok.json` — Bangkok zones (10–12 zones: Sukhumvit, Silom, Khaosan, Riverside, Chatuchak, Chinatown, Lat Phrao, Nana, Thong Lo, Asok)
-- [ ] `data/zones/paris.json` — Paris zones (10–12 zones: Marais, Montmartre, Latin Quarter, Saint-Germain, Bastille, Opera, Châtelet, Belleville, Pigalle, République)
-- [ ] Bangkok + Paris data imported to Supabase
-- [ ] City selector allows switching between Barcelona, Bangkok, Paris
-- [ ] Map pans to correct city on switch
+- [x] `supabase/seed/paris.sql` — Paris city + 5 zones + 15 properties (EUR) ✅
+  - Le Marais (9.0, safe), Saint-Germain (8.0, safe), Latin Quarter (8.0, safe)
+  - Montmartre (6.0, caution), Gare du Nord (4.0, avoid)
+- [x] `supabase/seed/bangkok.sql` — Bangkok city + 5 zones + 15 properties (USD) ✅
+  - Sukhumvit (9.0, safe), Silom (8.0, safe), Siam (8.0, safe)
+  - Khao San Road (6.0, caution), Patpong (4.0, avoid)
+- [x] `lib/database.js` — added `getPropertiesForCity()` with zone join ✅
+- [x] `lib/mapUtils.js` — added `getPropertyMarkerIcon()`, `formatPrice()`, `formatWomenRating()` ✅
+  - SVG data URI pins per property type (hotel/hostel/apartment/guesthouse)
+  - Color palette: hotel=coral, hostel=blue, apartment=forest, guesthouse=amber
+- [x] `components/map/CitySelector.jsx` — pill tab selector (Barcelona 🇪🇸 / Paris 🇫🇷 / Bangkok 🇹🇭) ✅
+- [x] `components/map/SafetyMap.jsx` — full rewrite with multi-city + property markers ✅
+  - `CITY_CONFIGS` — center/zoom per city
+  - `PropertyMarker` component (memo + useMemo icon — no flicker)
+  - `PropertyInfoContent` — fully inline styles (iOS Safari safe)
+  - Dual InfoWindow: zone vs property (selecting one clears the other)
+  - Parallel fetch: `Promise.all([getSafetyZones, getPropertiesForCity])`
+  - `mapRef` → `panTo()` + `setZoom()` on city change
+- [x] `app/map/MapPageClient.jsx` — `selectedCity` state + `CitySelector` in header ✅
 
-**Dependency:** Day 3 complete (zones displaying)
+**Paris zones seeded (pending SQL migration):**
+| Zone | Level | Score |
+|------|-------|-------|
+| Le Marais | safe | 9.0 |
+| Saint-Germain-des-Prés | safe | 8.0 |
+| Latin Quarter | safe | 8.0 |
+| Montmartre | caution | 6.0 |
+| Gare du Nord | avoid | 4.0 |
 
-**Testing requirements:**
-- [ ] Click 10 different zones across Barcelona — all open correct detail panel
-- [ ] Zone detail shows accurate name (not "undefined")
-- [ ] Score breakdown math checks out (components sum to final score)
-- [ ] Bangkok zones display correctly (city-center area should be yellow, tourist areas green)
-- [ ] Paris zones display correctly (Pigalle should be caution/red, Marais should be green)
-- [ ] City switch: Barcelona → Bangkok loads Bangkok zones within 1 second
-- [ ] Mobile: zone detail opens as bottom sheet, not floating popup
-- [ ] iOS Safari test: tap a zone → detail opens
+**Bangkok zones seeded (pending SQL migration):**
+| Zone | Level | Score |
+|------|-------|-------|
+| Sukhumvit | safe | 9.0 |
+| Silom | safe | 8.0 |
+| Siam | safe | 8.0 |
+| Khao San Road | caution | 6.0 |
+| Patpong | avoid | 4.0 |
 
-**Success criteria:**
-> 3 cities fully mapped and interactive. Click any zone in any city → see safety story.
-> "Why is Gothic Quarter amber? Because of pickpocketing near La Rambla (data sources: police reports + 1,200 traveler reviews)"
+**Notes:**
+> SVG property pin icons built as base64 data URIs — no external image requests, must be created in browser context after Google Maps API loads (`window.google.maps.Size/Point` required).
+> Dual InfoWindow: `selectedZone` + `selectedProperty` state; selecting one clears the other. Click map background clears both.
+> Paris + Bangkok SQL files must be run manually in Supabase SQL Editor before zones appear on map.
+> Build verified clean: `✓ /`, `✓ /map`, `✓ /test-db` routes all pass.
 
-**Notes / Blockers:**
-> _[Add notes as you go]_
+**Next:** Day 5 — Zone detail panel, filter system, accommodation list sidebar
 
 ---
 

@@ -567,5 +567,49 @@ export function geoJsonToGooglePath(geoJsonGeometry) {
 
 ---
 
+### SOLUTION-023: SVG marker icons require browser context (window.google)
+
+**Problem:** `getPropertyMarkerIcon()` throws "window is not defined" or "google is not defined" when called during SSR or before Maps API finishes loading.
+
+**Root cause:** `new window.google.maps.Size()` and `new window.google.maps.Point()` reference the Maps API which only exists in the browser after `useJsApiLoader` resolves.
+
+**Solution:** Only call `getPropertyMarkerIcon()` inside components that render after `isLoaded === true`. Use `useMemo` with `isLoaded` as a dependency:
+
+```javascript
+const icon = useMemo(() => {
+  if (!isLoaded) return null;          // ← guard
+  return getPropertyMarkerIcon(propertyType, isSelected);
+}, [propertyType, isSelected, isLoaded]);
+```
+
+**Prevention:** Any function that calls `new window.google.maps.*` must be guarded by `isLoaded`. Document this in the function's JSDoc.
+
+---
+
+### SOLUTION-024: Dual InfoWindow mutual exclusion (zone vs property)
+
+**Problem:** Both zone InfoWindow and property InfoWindow can be open simultaneously when the user clicks a property inside an already-selected zone, producing two overlapping windows.
+
+**Root cause:** Zone click and property marker click are separate handlers. If zone click fires before property click (event propagation), both can set state in the same tick.
+
+**Solution:** Use two separate state variables (`selectedZone`, `selectedProperty`). In each click handler, explicitly clear the other:
+
+```javascript
+function handleZoneSelect(zone) {
+  setSelectedProperty(null);  // always clear property
+  setSelectedZone(prev => prev?.id === zone.id ? null : zone);
+}
+function handlePropertySelect(property) {
+  setSelectedZone(null);      // always clear zone
+  setSelectedProperty(prev => prev?.id === property.id ? null : property);
+}
+```
+
+Stop propagation on the property marker click so the map background click doesn't also fire.
+
+**Prevention:** For mutually exclusive UI states, use a single discriminated union state or always clear the other explicitly on set.
+
+---
+
 *Last updated: 2026-04-06*
-*Solutions: 22*
+*Solutions: 24*
