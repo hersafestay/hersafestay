@@ -179,7 +179,7 @@ function FilterPanelContent({
       </div>
 
       {/* ── Scrollable body ── */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingRight: '2px' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingRight: '2px' }}>
 
         {/* Search input */}
         <div style={{ position: 'relative', marginBottom: '14px' }}>
@@ -497,22 +497,28 @@ export default function SearchFilters({
           <div
             style={{
               width: '100%',
-              maxHeight: '85vh',
+              maxHeight: '90vh',
               background: 'white',
               borderRadius: '20px 20px 0 0',
-              padding: '20px 20px 32px',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
               overflow: 'hidden',
+              // No padding here — padding lives in children so flex heights resolve correctly
             }}
           >
-            {/* Drag handle */}
-            <div style={{ width: '40px', height: '4px', background: '#e5e7eb', borderRadius: '2px', margin: '0 auto 16px', flexShrink: 0 }} />
-            <FilterPanelContent
-              {...panelProps}
-              onClose={() => setMobileOpen(false)}
-            />
+            {/* Drag handle — fixed at top */}
+            <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center', padding: '14px 20px 6px' }}>
+              <div style={{ width: '40px', height: '4px', background: '#e5e7eb', borderRadius: '2px' }} />
+            </div>
+
+            {/* Content wrapper: flex:1 + minHeight:0 lets FilterPanelContent scroll */}
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '0 20px 28px' }}>
+              <FilterPanelContent
+                {...panelProps}
+                onClose={() => setMobileOpen(false)}
+              />
+            </div>
           </div>
         </div>
       )}
