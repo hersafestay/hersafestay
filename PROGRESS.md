@@ -264,10 +264,10 @@
 
 ---
 
-### Day 5 — Accommodation Pins + Filter System
-**Date:** April 8, 2026
+### Day 5 — Search & Filter System ✅
+**Date:** April 11, 2026
 **Expert role:** Frontend Engineer
-**Status:** ⏳
+**Status:** ✅ Complete
 
 **Goal:** Hotels and hostels appear as pins ON the safety zones. Filtering works.
 
@@ -308,8 +308,30 @@
 > The map tells the full story: green/amber/red zones + hotel pins on the zones.
 > User filters to "Safe only" → sees only green zones with hotels they can book.
 
-**Notes / Blockers:**
-> _[Add notes as you go]_
+**Completed deliverables:**
+- [x] `lib/searchUtils.js` — pure filter/sort/debounce utilities (`DEFAULT_FILTERS`, `filterProperties`, `sortProperties`, `getFilterCounts`, `hasActiveFilters`, `debounce`)
+- [x] `components/map/SearchFilters.jsx` — collapsible filter panel (desktop) + FAB bottom-sheet (mobile)
+  - Debounced text search (300ms, `useRef` stable)
+  - Safety level checkboxes with live property counts
+  - Property type checkboxes with live counts
+  - Dual-range price slider (no external deps — CSS pseudo-element pointer-events)
+  - Sort dropdown: safety, price asc/desc, rating, name
+  - Active filter chips with per-chip clear buttons
+  - "Clear All Filters" button when filters are non-default
+  - Results count badge (green/red)
+- [x] `components/map/SafetyMap.jsx` updated:
+  - Filter + searchQuery state with localStorage persistence (key: `hersafestay_filters`)
+  - `filteredProperties` useMemo (OPT-017)
+  - `zonePropertyCounts` useMemo — drives count badges
+  - `ZoneCountBadge` component — colored SVG circle Marker at zone centroid
+  - No-results overlay with inline "Clear All" button
+- [x] SOLUTIONS.md — SOLUTION-026 added
+- [x] OPTIMIZATIONS.md — OPT-016 (debounced search), OPT-017 (memoized filter pipeline) added
+
+**Notes:**
+- Filter state persists across page refreshes via localStorage
+- priceRange[1] === 500 means "no maximum" (handles EUR properties > $500)
+- ZoneCountBadge only renders when count > 0 and hides during data loading
 
 ---
 

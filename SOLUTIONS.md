@@ -650,5 +650,22 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+## SOLUTION-026: Search & Filter System
+
+**Problem:** No way for users to filter properties by safety level, type, price, or search by name/neighborhood.
+
+**Solution:**
+1. Created `lib/searchUtils.js` — pure filter/sort/search/debounce utilities
+2. Created `components/map/SearchFilters.jsx` — collapsible panel with debounced search, checkboxes, dual-range price slider, sort dropdown, active chips, mobile bottom-sheet modal
+3. Updated `components/map/SafetyMap.jsx` — filter state, localStorage persistence, `filteredProperties` memo, `ZoneCountBadge`, no-results overlay
+4. Dual-range slider: two overlapping `<input type="range">` with `pointer-events: none` on inputs + `pointer-events: auto` on `::webkit-slider-thumb` via `<style>` block
+
+**Files:**
+- `lib/searchUtils.js`
+- `components/map/SearchFilters.jsx`
+- `components/map/SafetyMap.jsx`
+
+---
+
 *Last updated: 2026-04-11*
-*Solutions: 25*
+*Solutions: 26*

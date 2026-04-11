@@ -521,5 +521,45 @@ const PropertyMarker = memo(function PropertyMarker({ property, isSelected, onSe
 
 ---
 
-*Last updated: 2026-04-06*
-*Version: 1.1*
+## OPT-016: Debounced Search Input
+
+**Problem:** Every keystroke in the search box triggered re-render + re-filter of all properties, causing jank on mobile.
+
+**Solution:** `useRef(debounce(fn, 300)).current` pattern from `lib/searchUtils.js`:
+```javascript
+const debouncedSearch = useRef(debounce((v) => onSearchChange(v), 300)).current;
+```
+Using `useRef` (not `useMemo`) ensures the debounce timer instance is stable across renders without being recreated.
+
+**Result:** Search input stays responsive; filter computation fires 300ms after the user stops typing.
+
+**Status:** Implemented in `components/map/SearchFilters.jsx`.
+
+---
+
+## OPT-017: Memoized Filter Pipeline
+
+**Problem:** Filter + sort operations run on every render even when properties/filters haven't changed.
+
+**Solution:** Two `useMemo` hooks in `SafetyMap.jsx`:
+```javascript
+const filteredProperties = useMemo(
+  () => sortProperties(filterProperties(properties, filters, searchQuery), filters.sortBy),
+  [properties, filters, searchQuery]
+);
+const zonePropertyCounts = useMemo(() => {
+  const counts = {};
+  filteredProperties.forEach(p => { if (p.zone_id) counts[p.zone_id] = (counts[p.zone_id] || 0) + 1; });
+  return counts;
+}, [filteredProperties]);
+```
+Both pure `searchUtils.js` functions are referentially stable — no closures over mutable state.
+
+**Result:** Filter/sort only re-runs when `properties`, `filters`, or `searchQuery` change.
+
+**Status:** Implemented in `components/map/SafetyMap.jsx`.
+
+---
+
+*Last updated: 2026-04-11*
+*Version: 1.2*

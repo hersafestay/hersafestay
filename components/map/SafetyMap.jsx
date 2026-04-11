@@ -12,6 +12,8 @@ import {
   formatWomenRating,
 } from '@/lib/mapUtils';
 import { MAP_STYLES } from '@/lib/mapStyles';
+import SearchFilters from '@/components/map/SearchFilters';
+import { filterProperties, sortProperties, DEFAULT_FILTERS } from '@/lib/searchUtils';
 
 // ─── City configuration ─────────────────────────────────────────────────────
 
@@ -90,6 +92,37 @@ const PropertyMarker = memo(function PropertyMarker({ property, isSelected, onSe
       icon={icon}
       onClick={handleClick}
       zIndex={isSelected ? 100 : 50}
+    />
+  );
+});
+
+// ─── Zone Count Badge (Marker with SVG showing property count per zone) ───────
+
+const ZoneCountBadge = memo(function ZoneCountBadge({ zone, count }) {
+  const { fillColor } = getSafetyColors(zone.safety_level);
+
+  const icon = useMemo(() => {
+    if (typeof window === 'undefined' || !window.google?.maps) return null;
+    const size = count >= 10 ? 36 : 30;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 1}" fill="${fillColor}" stroke="white" stroke-width="2"/>
+      <text x="${size / 2}" y="${size / 2 + 4.5}" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="${count >= 10 ? 13 : 14}" fill="white">${count}</text>
+    </svg>`;
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new window.google.maps.Size(size, size),
+      anchor: new window.google.maps.Point(size / 2, size / 2),
+    };
+  }, [fillColor, count]);
+
+  if (!zone.centroid_lat || !zone.centroid_lng || !icon) return null;
+
+  return (
+    <Marker
+      position={{ lat: zone.centroid_lat, lng: zone.centroid_lng }}
+      icon={icon}
+      zIndex={5}
+      clickable={false}
     />
   );
 });
@@ -306,6 +339,36 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
   const [selectedZone,     setSelectedZone]     = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
 
+  // Search + filter state (persisted to localStorage)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState(() => {
+    if (typeof window === 'undefined') return DEFAULT_FILTERS;
+    try {
+      const saved = localStorage.getItem('hersafestay_filters');
+      return saved ? { ...DEFAULT_FILTERS, ...JSON.parse(saved) } : DEFAULT_FILTERS;
+    } catch { return DEFAULT_FILTERS; }
+  });
+
+  // Persist filters to localStorage whenever they change
+  useEffect(() => {
+    try { localStorage.setItem('hersafestay_filters', JSON.stringify(filters)); } catch {}
+  }, [filters]);
+
+  // Filtered + sorted properties (memoized for perf — OPT-015)
+  const filteredProperties = useMemo(
+    () => sortProperties(filterProperties(properties, filters, searchQuery), filters.sortBy),
+    [properties, filters, searchQuery]
+  );
+
+  // Count of visible (filtered) properties per zone
+  const zonePropertyCounts = useMemo(() => {
+    const counts = {};
+    filteredProperties.forEach((p) => {
+      if (p.zone_id) counts[p.zone_id] = (counts[p.zone_id] || 0) + 1;
+    });
+    return counts;
+  }, [filteredProperties]);
+
   // Load Google Maps JS API (script tag added once per page)
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -406,8 +469,17 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
           />
         ))}
 
-        {/* ── Property pins ── */}
-        {properties.map((property) => (
+        {/* ── Zone count badges (filtered property count per zone) ── */}
+        {!loading && zones.map((zone) => {
+          const count = zonePropertyCounts[zone.id] ?? 0;
+          if (count === 0) return null;
+          return (
+            <ZoneCountBadge key={`badge-${zone.id}`} zone={zone} count={count} />
+          );
+        })}
+
+        {/* ── Property pins (filtered) ── */}
+        {filteredProperties.map((property) => (
           <PropertyMarker
             key={property.id}
             property={property}
@@ -441,6 +513,47 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
 
       {/* ── Legend overlay ── */}
       <MapLegend />
+
+      {/* ── Search + filter panel ── */}
+      <SearchFilters
+        properties={properties}
+        filteredCount={filteredProperties.length}
+        filters={filters}
+        onFiltersChange={setFilters}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
+      {/* ── No results overlay ── */}
+      {!loading && properties.length > 0 && filteredProperties.length === 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '72px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.96)',
+          backdropFilter: 'blur(8px)',
+          borderRadius: '10px',
+          padding: '12px 20px',
+          fontSize: '14px',
+          color: '#2B2D42',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 20,
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          <span>🔍</span>
+          <span>No properties match your filters.</span>
+          <button
+            onClick={() => { setFilters(DEFAULT_FILTERS); setSearchQuery(''); }}
+            style={{ marginLeft: '8px', padding: '4px 12px', borderRadius: '6px', border: 'none', background: '#FF6B6B', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            Clear All
+          </button>
+        </div>
+      )}
 
       {/* ── Data loading indicator ── */}
       {loading && (
