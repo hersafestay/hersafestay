@@ -335,6 +335,46 @@
 
 ---
 
+### Day 5 (Continued) — Property List View + Zone Overlap Fix ✅
+**Date:** April 11, 2026
+**Status:** ✅ Complete
+
+**Completed:**
+- [x] `lib/mapUtils.js` — `shrinkPolygon()` function (pulls vertices ~20m toward centroid, creates zone gap) + `getPropertyMarkerIcon()` updated with `isHovered` state (3 sizes: normal/hovered/selected)
+- [x] `components/map/PropertyList.jsx` (new) — Airbnb-style scrollable sidebar:
+  - Property cards: type icon placeholder, name, women's stars, price/night, zone badge (safety color), safety features
+  - Selected: coral border + shadow; hover: elevation + border hint
+  - Sort indicator header ("Sorted by: Women's Rating ↓")
+  - 5 skeleton cards with shimmer animation while loading
+  - Empty state with "Clear All Filters" button
+- [x] `components/map/SafetyMap.jsx` — major refactor:
+  - `selectedProperty` + `onPropertySelect` now controlled props (lifted to parent)
+  - `hoveredPropertyId` prop drives marker size enlargement
+  - `onPropertyHover` passes marker hover back to parent → PropertyList highlights card
+  - `onFilteredPropertiesChange(filtered, total, sortBy)` callback → parent updates PropertyList
+  - `onLoadingChange(bool)` callback → parent shows/hides PropertyList skeletons
+  - `onMapReady(map)` callback → parent gets ref for programmatic panning
+  - `clearFiltersSignal` prop → increment to reset all filters from PropertyList empty state
+  - Zone `fillOpacity` 0.30 → 0.12; `strokeWeight` 2 → 3 (SOLUTION-027)
+  - Zone paths use `shrinkPolygon()` for physical gap between adjacent zones
+- [x] `app/map/MapPageClient.jsx` — split layout + state management:
+  - Desktop: PropertyList 380px left sidebar + map flex-1 right
+  - Mobile (≤767px): map 60% height top, list 40% height bottom
+  - `selectedProperty`, `hoveredPropertyId` state lifted here
+  - `mapRef` pans to selected property via `useEffect`
+  - All callbacks stable via `useCallback`
+- [x] SOLUTIONS.md — SOLUTION-027 (zone overlap) + SOLUTION-028 (property list sync)
+- [x] PROGRESS.md updated
+
+**Notes:**
+- Sort changes now visually obvious — list reorders instantly as sort changes
+- El Raval + Gothic Quarter overlap now clear (12% opacity, 3px borders, 20m gap)
+- Hover card → map marker enlarges (normal 26px → hovered 30px → selected 34px)
+- Click marker → list scrolls to card; click card → map pans + InfoWindow opens
+- `clearFiltersSignal` pattern: parent increments counter → SafetyMap resets on change
+
+---
+
 ### Day 6 — London + NYC + Mobile Optimization
 **Date:** April 9, 2026
 **Expert role:** Mobile Engineer + GIS Specialist

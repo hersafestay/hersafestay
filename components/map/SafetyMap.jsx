@@ -5,6 +5,7 @@ import { GoogleMap, Polygon, Marker, InfoWindow, useJsApiLoader } from '@react-g
 import { getSafetyZones, getPropertiesForCity } from '@/lib/database';
 import {
   geoJsonToGooglePath,
+  shrinkPolygon,
   getSafetyColors,
   formatSafetyScore,
   getPropertyMarkerIcon,
@@ -18,8 +19,8 @@ import { filterProperties, sortProperties, DEFAULT_FILTERS } from '@/lib/searchU
 // ─── City configuration ─────────────────────────────────────────────────────
 
 export const CITY_CONFIGS = {
-  barcelona: { center: { lat: 41.3851, lng: 2.1734  }, zoom: 13 },
-  paris:     { center: { lat: 48.8566, lng: 2.3522  }, zoom: 13 },
+  barcelona: { center: { lat: 41.3851, lng: 2.1734   }, zoom: 13 },
+  paris:     { center: { lat: 48.8566, lng: 2.3522   }, zoom: 13 },
   bangkok:   { center: { lat: 13.7563, lng: 100.5018 }, zoom: 13 },
 };
 
@@ -42,17 +43,18 @@ const MAP_OPTIONS = {
 const ZonePolygon = memo(function ZonePolygon({ zone, isSelected, onSelect }) {
   const { fillColor, strokeColor } = getSafetyColors(zone.safety_level);
 
+  // Shrink polygon ~20 m toward centroid → visual gap between adjacent zones (SOLUTION-027)
   const paths = useMemo(
-    () => geoJsonToGooglePath(zone.geojson_geometry),
+    () => shrinkPolygon(geoJsonToGooglePath(zone.geojson_geometry)),
     [zone.geojson_geometry]
   );
 
   const options = useMemo(
     () => ({
       fillColor,
-      fillOpacity: isSelected ? 0.55 : 0.30,
+      fillOpacity: isSelected ? 0.40 : 0.12,  // 0.12 = barely tints; keeps map readable
       strokeColor,
-      strokeWeight: isSelected ? 2.5 : 2,
+      strokeWeight: isSelected ? 3.5 : 3,      // 3 px solid border = clear zone boundaries
       strokeOpacity: 1,
       clickable: true,
       zIndex: isSelected ? 10 : 1,
@@ -63,26 +65,26 @@ const ZonePolygon = memo(function ZonePolygon({ zone, isSelected, onSelect }) {
   const handleClick = useCallback(() => onSelect(zone), [zone, onSelect]);
 
   if (!paths.length) return null;
-
   return <Polygon paths={paths} options={options} onClick={handleClick} />;
 });
 
 // ─── Property Marker (memoized) ──────────────────────────────────────────────
 
-const PropertyMarker = memo(function PropertyMarker({ property, isSelected, onSelect }) {
-  // Build SVG icon in browser context (window.google is available here — inside <GoogleMap>)
+const PropertyMarker = memo(function PropertyMarker({
+  property,
+  isSelected,
+  isHovered,
+  onSelect,
+  onHover,
+}) {
   const icon = useMemo(() => {
     if (typeof window === 'undefined' || !window.google?.maps) return null;
-    return getPropertyMarkerIcon(property.property_type, isSelected);
-  }, [property.property_type, isSelected]);
+    return getPropertyMarkerIcon(property.property_type, isSelected, isHovered);
+  }, [property.property_type, isSelected, isHovered]);
 
-  const handleClick = useCallback(
-    (e) => {
-      if (e?.stop) e.stop(); // prevent event bubbling to GoogleMap onClick
-      onSelect(property);
-    },
-    [property, onSelect]
-  );
+  const handleClick    = useCallback((e) => { if (e?.stop) e.stop(); onSelect(property); }, [property, onSelect]);
+  const handleMouseOver = useCallback(() => onHover?.(property.id),  [property.id, onHover]);
+  const handleMouseOut  = useCallback(() => onHover?.(null),         [onHover]);
 
   if (!property.lat || !property.lng) return null;
 
@@ -91,12 +93,14 @@ const PropertyMarker = memo(function PropertyMarker({ property, isSelected, onSe
       position={{ lat: Number(property.lat), lng: Number(property.lng) }}
       icon={icon}
       onClick={handleClick}
-      zIndex={isSelected ? 100 : 50}
+      onMouseOver={handleMouseOver}
+      onMouseOut={handleMouseOut}
+      zIndex={isSelected ? 100 : isHovered ? 75 : 50}
     />
   );
 });
 
-// ─── Zone Count Badge (Marker with SVG showing property count per zone) ───────
+// ─── Zone Count Badge ─────────────────────────────────────────────────────────
 
 const ZoneCountBadge = memo(function ZoneCountBadge({ zone, count }) {
   const { fillColor } = getSafetyColors(zone.safety_level);
@@ -127,7 +131,7 @@ const ZoneCountBadge = memo(function ZoneCountBadge({ zone, count }) {
   );
 });
 
-// ─── Zone InfoWindow content (all inline styles — SOLUTION-012) ──────────────
+// ─── Zone InfoWindow content ──────────────────────────────────────────────────
 
 function ZoneInfoContent({ zone }) {
   const { fillColor, label } = getSafetyColors(zone.safety_level);
@@ -164,10 +168,10 @@ function ZoneInfoContent({ zone }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <tbody>
               {[
-                { label: 'Crime',       score: zone.crime_score,        weight: '40%' },
-                { label: 'Reviews',     score: zone.reviews_score,      weight: '30%' },
-                { label: 'Walkability', score: zone.walkability_score,  weight: '20%' },
-                { label: 'Time Factor', score: zone.time_modifier,      weight: '10%' },
+                { label: 'Crime',       score: zone.crime_score,       weight: '40%' },
+                { label: 'Reviews',     score: zone.reviews_score,     weight: '30%' },
+                { label: 'Walkability', score: zone.walkability_score, weight: '20%' },
+                { label: 'Time Factor', score: zone.time_modifier,     weight: '10%' },
               ].map(({ label, score, weight }) =>
                 score != null ? (
                   <tr key={label}>
@@ -198,7 +202,7 @@ function ZoneInfoContent({ zone }) {
   );
 }
 
-// ─── Property InfoWindow content (all inline styles — SOLUTION-012) ──────────
+// ─── Property InfoWindow content ──────────────────────────────────────────────
 
 function PropertyInfoContent({ property }) {
   const TYPE_COLORS = { hotel: '#FF6B6B', hostel: '#4A90D9', apartment: '#2D6A4F', guesthouse: '#F4A261' };
@@ -206,7 +210,6 @@ function PropertyInfoContent({ property }) {
 
   return (
     <div style={{ padding: '4px', maxWidth: '280px', fontFamily: 'Georgia, serif', minWidth: '220px' }}>
-      {/* Name + type badge */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
         <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#2B2D42', lineHeight: '1.3', flex: 1 }}>
           {property.name}
@@ -216,7 +219,6 @@ function PropertyInfoContent({ property }) {
         </span>
       </div>
 
-      {/* Rating + price row */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', fontSize: '13px', flexWrap: 'wrap' }}>
         {property.women_rating && (
           <div>
@@ -233,7 +235,6 @@ function PropertyInfoContent({ property }) {
         )}
       </div>
 
-      {/* Zone badge */}
       {property.zone?.zone_name && (
         <div style={{ marginBottom: '8px' }}>
           <span style={{ fontSize: '12px', color: '#78716c', background: '#f5f5f4', padding: '3px 8px', borderRadius: '4px', display: 'inline-block' }}>
@@ -242,14 +243,12 @@ function PropertyInfoContent({ property }) {
         </div>
       )}
 
-      {/* Description (first sentence only to keep compact) */}
       {property.description && (
         <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#57534e', lineHeight: '1.5' }}>
           {property.description.split('.')[0]}.
         </p>
       )}
 
-      {/* Safety features */}
       {property.safety_features?.length > 0 && (
         <div>
           <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>
@@ -328,16 +327,33 @@ function MapErrorState({ message }) {
 
 // ─── Main SafetyMap Component ────────────────────────────────────────────────
 
-export default function SafetyMap({ cityId = 'barcelona' }) {
-  const mapRef    = useRef(null);
+export default function SafetyMap({
+  cityId = 'barcelona',
+
+  // Controlled selection — lifted to MapPageClient for list ↔ map sync
+  selectedProperty = null,
+  onPropertySelect = null,
+
+  // Hover state — driven by PropertyList card hover
+  hoveredPropertyId = null,
+  onPropertyHover = null,
+
+  // Callbacks so MapPageClient can update PropertyList
+  onFilteredPropertiesChange = null,
+  onMapReady = null,
+  onLoadingChange = null,
+
+  // Increment to trigger filter reset from PropertyList empty state button
+  clearFiltersSignal = 0,
+}) {
+  const mapRef = useRef(null);
   const [zones,      setZones]      = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  // One InfoWindow at a time — property OR zone, never both
-  const [selectedZone,     setSelectedZone]     = useState(null);
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  // Zone InfoWindow stays local — PropertyList doesn't need zone selection
+  const [selectedZone, setSelectedZone] = useState(null);
 
   // Search + filter state (persisted to localStorage)
   const [searchQuery, setSearchQuery] = useState('');
@@ -349,18 +365,25 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
     } catch { return DEFAULT_FILTERS; }
   });
 
-  // Persist filters to localStorage whenever they change
+  // Persist filters to localStorage
   useEffect(() => {
     try { localStorage.setItem('hersafestay_filters', JSON.stringify(filters)); } catch {}
   }, [filters]);
 
-  // Filtered + sorted properties (memoized for perf — OPT-015)
+  // Reset filters when parent signals (from PropertyList "Clear All Filters" button)
+  useEffect(() => {
+    if (clearFiltersSignal === 0) return;
+    setFilters(DEFAULT_FILTERS);
+    setSearchQuery('');
+  }, [clearFiltersSignal]);
+
+  // Filtered + sorted properties (memoized — OPT-017)
   const filteredProperties = useMemo(
     () => sortProperties(filterProperties(properties, filters, searchQuery), filters.sortBy),
     [properties, filters, searchQuery]
   );
 
-  // Count of visible (filtered) properties per zone
+  // Count of filtered properties per zone (drives ZoneCountBadge)
   const zonePropertyCounts = useMemo(() => {
     const counts = {};
     filteredProperties.forEach((p) => {
@@ -369,18 +392,29 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
     return counts;
   }, [filteredProperties]);
 
-  // Load Google Maps JS API (script tag added once per page)
+  // Notify parent when filtered list changes → PropertyList updates
+  useEffect(() => {
+    onFilteredPropertiesChange?.(filteredProperties, properties.length, filters.sortBy);
+  }, [filteredProperties, onFilteredPropertiesChange]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Notify parent when loading state changes → PropertyList shows skeletons
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
+
+  // Load Google Maps JS API
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     id: 'google-maps-script',
   });
 
-  // Store map instance on first load
+  // Store map instance + notify parent (for list-triggered panning)
   const onMapLoad = useCallback((map) => {
     mapRef.current = map;
-  }, []);
+    onMapReady?.(map);
+  }, [onMapReady]);
 
-  // Fetch zones + properties whenever city changes (or on initial load)
+  // Fetch zones + properties whenever city changes
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -388,7 +422,7 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
     setLoading(true);
     setError(null);
     setSelectedZone(null);
-    setSelectedProperty(null);
+    onPropertySelect?.(null); // clear parent's selection on city change
 
     Promise.all([
       getSafetyZones(cityId),
@@ -400,20 +434,16 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
       } else {
         setZones(zonesRes.data || []);
       }
-      // Properties may not exist yet for some cities — treat as empty, not error
       setProperties(propsRes.data || []);
       setLoading(false);
     }).catch((err) => {
-      if (!cancelled) {
-        setError(err.message);
-        setLoading(false);
-      }
+      if (!cancelled) { setError(err.message); setLoading(false); }
     });
 
     return () => { cancelled = true; };
-  }, [cityId, isLoaded]);
+  }, [cityId, isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-center + re-zoom the map when city changes
+  // Re-center + re-zoom when city changes
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
     const config = CITY_CONFIGS[cityId];
@@ -422,27 +452,30 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
     mapRef.current.setZoom(config.zoom);
   }, [cityId, isLoaded]);
 
-  // ── Event handlers ─────────────────────────────────────────────────────────
+  // ── Event handlers ──────────────────────────────────────────────────────────
 
-  // Close both InfoWindows when clicking empty map
   const handleMapClick = useCallback(() => {
     setSelectedZone(null);
-    setSelectedProperty(null);
-  }, []);
+    onPropertySelect?.(null);
+  }, [onPropertySelect]);
 
-  // Selecting a zone closes any open property InfoWindow
   const handleZoneSelect = useCallback((zone) => {
-    setSelectedProperty(null);
+    onPropertySelect?.(null); // close property InfoWindow when zone clicked
     setSelectedZone((prev) => (prev?.id === zone?.id ? null : zone));
-  }, []);
+  }, [onPropertySelect]);
 
-  // Selecting a property closes any open zone InfoWindow
+  // Marker click — toggle logic lives in MapPageClient
   const handlePropertySelect = useCallback((property) => {
     setSelectedZone(null);
-    setSelectedProperty((prev) => (prev?.id === property?.id ? null : property));
-  }, []);
+    onPropertySelect?.(property);
+  }, [onPropertySelect]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // Pass hover through to parent (which forwards to PropertyList)
+  const handlePropertyHover = useCallback((id) => {
+    onPropertyHover?.(id);
+  }, [onPropertyHover]);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loadError)  return <MapErrorState  message="Google Maps failed to load. Check your API key." />;
   if (!isLoaded)  return <MapLoadingState message="Loading Google Maps…" />;
@@ -459,7 +492,7 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
         onLoad={onMapLoad}
         onClick={handleMapClick}
       >
-        {/* ── Zone polygons ── */}
+        {/* ── Zone polygons (shrunk + low opacity — SOLUTION-027) ── */}
         {zones.map((zone) => (
           <ZonePolygon
             key={zone.id}
@@ -469,22 +502,22 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
           />
         ))}
 
-        {/* ── Zone count badges (filtered property count per zone) ── */}
+        {/* ── Zone count badges ── */}
         {!loading && zones.map((zone) => {
           const count = zonePropertyCounts[zone.id] ?? 0;
           if (count === 0) return null;
-          return (
-            <ZoneCountBadge key={`badge-${zone.id}`} zone={zone} count={count} />
-          );
+          return <ZoneCountBadge key={`badge-${zone.id}`} zone={zone} count={count} />;
         })}
 
-        {/* ── Property pins (filtered) ── */}
+        {/* ── Property pins (filtered, hover-aware) ── */}
         {filteredProperties.map((property) => (
           <PropertyMarker
             key={property.id}
             property={property}
             isSelected={selectedProperty?.id === property.id}
+            isHovered={hoveredPropertyId === property.id}
             onSelect={handlePropertySelect}
+            onHover={handlePropertyHover}
           />
         ))}
 
@@ -503,7 +536,7 @@ export default function SafetyMap({ cityId = 'barcelona' }) {
         {selectedProperty && selectedProperty.lat && selectedProperty.lng && (
           <InfoWindow
             position={{ lat: Number(selectedProperty.lat), lng: Number(selectedProperty.lng) }}
-            onCloseClick={() => setSelectedProperty(null)}
+            onCloseClick={() => onPropertySelect?.(null)}
             options={{ maxWidth: 300 }}
           >
             <PropertyInfoContent property={selectedProperty} />

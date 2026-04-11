@@ -667,5 +667,42 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+## SOLUTION-027: Zone Overlap Visual Confusion
+
+**Problem:** Barcelona's El Raval (red) and Gothic Quarter (amber) overlap visually because fill opacity was 30%. The color blend looked muddy and users couldn't tell which zone they were in.
+
+**Solution:**
+1. Reduced `fillOpacity` from `0.30` → `0.12` (barely tints the map — zone boundary, not flood fill)
+2. Increased `strokeWeight` from `2` → `3` px (thick solid border makes zone boundaries unmistakable)
+3. Added `shrinkPolygon()` in `lib/mapUtils.js` — pulls each polygon vertex ~20 m toward centroid, creating a physical gap between adjacent zones. No more blended colors at zone edges.
+
+**Files:** `components/map/SafetyMap.jsx`, `lib/mapUtils.js`
+
+**Impact:** Overlapping zones (El Raval + Gothic Quarter, Silom + Patpong, Latin Quarter + Saint-Germain) now have visually distinct, readable borders even where they share edges.
+
+---
+
+## SOLUTION-028: Property List View + List ↔ Map Sync
+
+**Problem:** Sort changes (especially women's rating) were not obvious because there was no visual list of properties — only map pins. Users couldn't tell what order pins were in.
+
+**Solution:**
+1. Created `components/map/PropertyList.jsx` — scrollable Airbnb-style sidebar:
+   - Property cards with type icon placeholder, name, stars, price, zone badge, safety features
+   - Selected: coral border + elevated shadow
+   - Hover: slight elevation + border hint; syncs to map marker (enlarged)
+   - Sort indicator header ("Sorted by: Safety Score ↓")
+   - Skeleton loading (5 animated cards with shimmer)
+   - Empty state with "Clear All Filters" button
+2. Lifted `selectedProperty` and `hoveredPropertyId` state to `MapPageClient` for bi-directional sync
+3. `SafetyMap` now accepts `selectedProperty`/`onPropertySelect` as controlled props; also exposes `onFilteredPropertiesChange`, `onLoadingChange`, `onMapReady`, `clearFiltersSignal`
+4. `MapPageClient` updated to split layout: PropertyList (380 px left) + Map (flex right). Mobile: map 60% top + list 40% bottom
+5. Clicking a card pans the map (via `mapRef.current.panTo`) and opens the InfoWindow
+6. Clicking a map marker scrolls the corresponding card into view (`scrollIntoView`)
+
+**Files:** `components/map/PropertyList.jsx` (new), `components/map/SafetyMap.jsx`, `app/map/MapPageClient.jsx`, `lib/mapUtils.js`
+
+---
+
 *Last updated: 2026-04-11*
-*Solutions: 26*
+*Solutions: 28*

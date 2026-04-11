@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import CitySelector from '@/components/map/CitySelector';
+import PropertyList from '@/components/map/PropertyList';
 
 // CRITICAL: ssr:false must live inside a Client Component (SOLUTION-013)
 const SafetyMap = dynamic(
@@ -36,16 +37,88 @@ const SafetyMap = dynamic(
   }
 );
 
-const CITY_NAMES = {
-  barcelona: 'Barcelona',
-  paris:     'Paris',
-  bangkok:   'Bangkok',
-};
-
 const HEADER_H = 56;
 
 export default function MapPageClient() {
+  // ── City ─────────────────────────────────────────────────────────────────────
   const [selectedCity, setSelectedCity] = useState('barcelona');
+
+  // ── Shared selection state (lifted from SafetyMap for list ↔ map sync) ───────
+  const [selectedProperty,  setSelectedProperty]  = useState(null);
+  const [hoveredPropertyId, setHoveredPropertyId] = useState(null);
+
+  // ── Data received from SafetyMap via callbacks ────────────────────────────────
+  const [filteredProperties, setFilteredProperties] = useState([]);
+  const [totalCount,         setTotalCount]         = useState(0);
+  const [sortBy,             setSortBy]             = useState('safety-desc');
+  const [propertiesLoading,  setPropertiesLoading]  = useState(true);
+
+  // ── Signal to SafetyMap to clear all filters ──────────────────────────────────
+  const [clearFiltersSignal, setClearFiltersSignal] = useState(0);
+
+  // ── Map instance for programmatic panning ────────────────────────────────────
+  const mapRef = useRef(null);
+
+  // ── Stable callbacks ─────────────────────────────────────────────────────────
+
+  /** SafetyMap → MapPageClient: filtered list changed */
+  const handleFilteredPropertiesChange = useCallback((filtered, total, sort) => {
+    setFilteredProperties(filtered);
+    setTotalCount(total);
+    setSortBy(sort);
+  }, []);
+
+  /** SafetyMap → MapPageClient: loading state changed */
+  const handleLoadingChange = useCallback((isLoading) => {
+    setPropertiesLoading(isLoading);
+  }, []);
+
+  /** SafetyMap → MapPageClient: map instance ready */
+  const handleMapReady = useCallback((map) => {
+    mapRef.current = map;
+  }, []);
+
+  /**
+   * Property selected (from either map marker click OR list card click).
+   * Toggle: clicking the same property again deselects it.
+   * Null: explicit deselect (map background click, InfoWindow close, city change).
+   */
+  const handlePropertySelect = useCallback((property) => {
+    if (property === null) {
+      setSelectedProperty(null);
+      return;
+    }
+    setSelectedProperty((prev) => (prev?.id === property?.id ? null : property));
+  }, []);
+
+  /** Property hovered (from list card or map marker) */
+  const handlePropertyHover = useCallback((id) => {
+    setHoveredPropertyId(id ?? null);
+  }, []);
+
+  /** PropertyList empty state → tell SafetyMap to reset filters */
+  const handleClearFilters = useCallback(() => {
+    setClearFiltersSignal((s) => s + 1);
+  }, []);
+
+  // ── Effects ───────────────────────────────────────────────────────────────────
+
+  // Pan map to selected property (triggered by list card clicks)
+  useEffect(() => {
+    if (!selectedProperty || !mapRef.current) return;
+    mapRef.current.panTo({
+      lat: Number(selectedProperty.lat),
+      lng: Number(selectedProperty.lng),
+    });
+  }, [selectedProperty]);
+
+  // Clear selection when city changes
+  useEffect(() => {
+    setSelectedProperty(null);
+    setHoveredPropertyId(null);
+  }, [selectedCity]);
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <div style={{
@@ -55,6 +128,7 @@ export default function MapPageClient() {
       background: '#2B2D42',
       overflow: 'hidden',
     }}>
+
       {/* ── Header ── */}
       <header style={{
         height: `${HEADER_H}px`,
@@ -69,7 +143,6 @@ export default function MapPageClient() {
         zIndex: 100,
         gap: '8px',
       }}>
-        {/* Back link */}
         <Link
           href="/"
           style={{
@@ -91,7 +164,6 @@ export default function MapPageClient() {
           ← Home
         </Link>
 
-        {/* City selector — centre */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <CitySelector
             currentCity={selectedCity}
@@ -99,16 +171,9 @@ export default function MapPageClient() {
           />
         </div>
 
-        {/* Logo / title */}
         <Link
           href="/"
-          style={{
-            textDecoration: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            flexShrink: 0,
-          }}
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}
         >
           <svg width="20" height="26" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M16,2 C25,2 30,8 30,16 C30,26 16,42 16,42 C16,42 2,26 2,16 C2,8 7,2 16,2 Z" fill="#FF6B6B"/>
@@ -120,7 +185,7 @@ export default function MapPageClient() {
               fontWeight: '700',
               color: '#FF6B6B',
               fontFamily: 'var(--font-crimson-pro, Georgia, serif)',
-              display: 'none', // hidden on narrow mobile; shown via class below
+              display: 'none',
             }}
             className="header-brand-text"
           >
@@ -129,15 +194,81 @@ export default function MapPageClient() {
         </Link>
       </header>
 
-      {/* ── Map ── */}
-      <main style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        <SafetyMap cityId={selectedCity} />
+      {/* ── Main content: PropertyList sidebar + Map ── */}
+      <main
+        className="hss-main-content"
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'row',
+          overflow: 'hidden',
+          minHeight: 0,
+        }}
+      >
+        {/* Property List sidebar (380 px on desktop, full width on mobile) */}
+        <div
+          className="hss-list-area"
+          style={{
+            width: '380px',
+            flexShrink: 0,
+            overflow: 'hidden',
+            borderRight: '1px solid #FFE8D6',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <PropertyList
+            properties={filteredProperties}
+            totalCount={totalCount}
+            selectedProperty={selectedProperty}
+            hoveredPropertyId={hoveredPropertyId}
+            onPropertySelect={handlePropertySelect}
+            onPropertyHover={handlePropertyHover}
+            sortBy={sortBy}
+            loading={propertiesLoading}
+            onClearFilters={handleClearFilters}
+          />
+        </div>
+
+        {/* Map (flex:1 remaining space) */}
+        <div
+          className="hss-map-area"
+          style={{ flex: 1, position: 'relative', overflow: 'hidden' }}
+        >
+          <SafetyMap
+            cityId={selectedCity}
+            selectedProperty={selectedProperty}
+            onPropertySelect={handlePropertySelect}
+            hoveredPropertyId={hoveredPropertyId}
+            onPropertyHover={handlePropertyHover}
+            onFilteredPropertiesChange={handleFilteredPropertiesChange}
+            onLoadingChange={handleLoadingChange}
+            onMapReady={handleMapReady}
+            clearFiltersSignal={clearFiltersSignal}
+          />
+        </div>
       </main>
 
-      {/* Inline responsive style — show brand text on wider screens */}
+      {/* ── Responsive styles ── */}
       <style>{`
         @media (min-width: 480px) {
           .header-brand-text { display: inline !important; }
+        }
+        /* Mobile: map on top (60%), list on bottom (40%) */
+        @media (max-width: 767px) {
+          .hss-main-content { flex-direction: column !important; }
+          .hss-list-area {
+            width: 100% !important;
+            height: 40% !important;
+            border-right: none !important;
+            border-top: 1px solid #FFE8D6 !important;
+            order: 2;
+          }
+          .hss-map-area {
+            height: 60% !important;
+            flex: none !important;
+            order: 1;
+          }
         }
       `}</style>
     </div>
