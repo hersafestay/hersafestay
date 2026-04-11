@@ -611,5 +611,44 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
-*Last updated: 2026-04-06*
-*Solutions: 24*
+---
+
+## Property Coordinate Distribution
+
+### SOLUTION-025: Properties outside zone boundaries
+
+**Date:** 2026-04-11
+
+**Problem:** Several properties had lat/lng coordinates that placed them visually outside their colored zone polygons on the map.
+
+**Root cause:** Seed data coordinates were chosen manually (copy-pasted real hotel addresses) without validating them against the exact zone polygon boundaries stored in the database.
+
+**Specific violations found:**
+
+| Property | Zone | Issue |
+|----------|------|-------|
+| Hotel Arts Barcelona | Barceloneta [lat 41.3740–41.3830] | lat=41.3878 — 4.8m above zone boundary |
+| Pullman Paris Montparnasse | Gare du Nord [lat 48.8740–48.8855] | lat=48.8419 — 3.3km outside zone (property is in Montparnasse!) |
+| Lebua at State Tower | Silom [lat 13.7250–13.7330, lng 100.5224–100.5400] | Both axes outside zone |
+| Hôtel des Arts Montmartre + Terrass' Hotel | Montmartre | Only 180m apart (< 200m minimum) |
+| The Surawongse Hotel | Patpong [lat 13.7190–13.7260] | lat=13.7264 — marginally above max |
+
+**Solution:**
+1. Audited all 45 properties across 3 cities against zone bounding boxes
+2. Generated corrected coordinates using point-in-polygon validation
+3. Ensured minimum 200m (0.002°) spacing between properties in same zone
+4. Applied fixes via UPDATE statements in `*_fixed.sql` seed files
+
+**Files:**
+- `supabase/seed/barcelona_fixed.sql`
+- `supabase/seed/paris_fixed.sql`
+- `supabase/seed/bangkok_fixed.sql`
+- `scripts/distribute-properties.js` — reusable point-in-polygon algorithm
+- `supabase/seed/APPLY_FIXES.md` — instructions for applying
+
+**Prevention:** For all future cities, use `scripts/distribute-properties.js` to generate coordinates. Add zones to the `ZONES` object in the script — it validates points are inside the polygon before output.
+
+---
+
+*Last updated: 2026-04-11*
+*Solutions: 25*

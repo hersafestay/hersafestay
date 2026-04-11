@@ -221,6 +221,49 @@
 
 ---
 
+### Day 4 (Continued) — Property Coordinate Distribution Fix
+**Date:** April 11, 2026
+**Expert role:** GIS Engineer + Data Quality
+**Status:** ✅ COMPLETED
+
+**Goal:** Fix property coordinates so all 45 properties are properly inside their zone polygons with good visual distribution.
+
+#### Deliverables
+
+- [x] Audited all 45 properties (3 cities × 5 zones × 3 properties) against zone polygon boundaries ✅
+- [x] Identified 5 coordinate violations (see SOLUTIONS.md SOLUTION-025) ✅
+- [x] `scripts/distribute-properties.js` — point-in-polygon algorithm + distribution helper ✅
+- [x] `supabase/seed/barcelona_fixed.sql` — 15 properties redistributed ✅
+- [x] `supabase/seed/paris_fixed.sql` — 15 properties redistributed (critical fix: Pullman 3.3km off) ✅
+- [x] `supabase/seed/bangkok_fixed.sql` — 15 properties redistributed ✅
+- [x] `supabase/seed/APPLY_FIXES.md` — step-by-step application instructions ✅
+- [x] SOLUTIONS.md updated with SOLUTION-025 ✅
+
+**Violations fixed:**
+| City | Property | Issue |
+|------|----------|-------|
+| Barcelona | Hotel Arts Barcelona | lat was OUTSIDE Barceloneta zone (4.8m above) |
+| Paris | Pullman Paris Montparnasse | lat was 3.3km OUTSIDE Gare du Nord zone |
+| Paris | Hôtel des Arts + Terrass' Hotel | Only 180m apart (< 200m minimum) |
+| Bangkok | Lebua at State Tower | Both lat AND lng outside Silom zone |
+| Bangkok | The Surawongse Hotel | lat marginally outside Patpong zone |
+
+**Pending (requires running SQL in Supabase Dashboard):**
+- [ ] ⚠️ Run `barcelona_fixed.sql` in Supabase SQL Editor
+- [ ] ⚠️ Run `paris_fixed.sql` in Supabase SQL Editor
+- [ ] ⚠️ Run `bangkok_fixed.sql` in Supabase SQL Editor
+- [ ] ⚠️ Verify all rows show `✓ INSIDE` in verification query output
+
+**Notes:**
+> All coordinate fixes are UPDATE statements — no data deletion. Safe to run.
+> All property names, types, prices, ratings, descriptions unchanged.
+> Only lat/lng coordinates updated.
+> See supabase/seed/APPLY_FIXES.md for exact steps.
+
+**Next:** Apply SQL fixes in Supabase, then proceed to Day 5 Search & Filters 🔍
+
+---
+
 ### Day 5 — Accommodation Pins + Filter System
 **Date:** April 8, 2026
 **Expert role:** Frontend Engineer
