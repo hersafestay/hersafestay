@@ -74,6 +74,7 @@ const PropertyMarker = memo(function PropertyMarker({
   property,
   isSelected,
   isHovered,
+  isAnimating,
   onSelect,
   onHover,
 }) {
@@ -81,6 +82,12 @@ const PropertyMarker = memo(function PropertyMarker({
     if (typeof window === 'undefined' || !window.google?.maps) return null;
     return getPropertyMarkerIcon(property.property_type, isSelected, isHovered);
   }, [property.property_type, isSelected, isHovered]);
+
+  // BOUNCE for 2 s on selection, null stops the animation
+  const animation = useMemo(() => {
+    if (typeof window === 'undefined' || !window.google?.maps) return null;
+    return isAnimating ? window.google.maps.Animation.BOUNCE : null;
+  }, [isAnimating]);
 
   const handleClick    = useCallback((e) => { if (e?.stop) e.stop(); onSelect(property); }, [property, onSelect]);
   const handleMouseOver = useCallback(() => onHover?.(property.id),  [property.id, onHover]);
@@ -92,10 +99,11 @@ const PropertyMarker = memo(function PropertyMarker({
     <Marker
       position={{ lat: Number(property.lat), lng: Number(property.lng) }}
       icon={icon}
+      animation={animation}
       onClick={handleClick}
       onMouseOver={handleMouseOver}
       onMouseOut={handleMouseOut}
-      zIndex={isSelected ? 100 : isHovered ? 75 : 50}
+      zIndex={isSelected ? 1000 : isHovered ? 75 : 50}
     />
   );
 });
@@ -346,7 +354,9 @@ export default function SafetyMap({
   // Increment to trigger filter reset from PropertyList empty state button
   clearFiltersSignal = 0,
 }) {
-  const mapRef = useRef(null);
+  const mapRef            = useRef(null);
+  const animationTimerRef = useRef(null);
+  const [animatingPropertyId, setAnimatingPropertyId] = useState(null);
   const [zones,      setZones]      = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -452,6 +462,26 @@ export default function SafetyMap({
     mapRef.current.setZoom(config.zoom);
   }, [cityId, isLoaded]);
 
+  // Bounce selected marker for 2 s then stop — keeps animation from becoming distracting
+  useEffect(() => {
+    if (animationTimerRef.current) {
+      clearTimeout(animationTimerRef.current);
+      animationTimerRef.current = null;
+    }
+    if (selectedProperty?.id) {
+      setAnimatingPropertyId(selectedProperty.id);
+      animationTimerRef.current = setTimeout(() => {
+        setAnimatingPropertyId(null);
+        animationTimerRef.current = null;
+      }, 2000);
+    } else {
+      setAnimatingPropertyId(null);
+    }
+    return () => {
+      if (animationTimerRef.current) clearTimeout(animationTimerRef.current);
+    };
+  }, [selectedProperty?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Event handlers ──────────────────────────────────────────────────────────
 
   const handleMapClick = useCallback(() => {
@@ -516,6 +546,7 @@ export default function SafetyMap({
             property={property}
             isSelected={selectedProperty?.id === property.id}
             isHovered={hoveredPropertyId === property.id}
+            isAnimating={animatingPropertyId === property.id}
             onSelect={handlePropertySelect}
             onHover={handlePropertyHover}
           />

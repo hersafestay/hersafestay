@@ -704,5 +704,21 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+## SOLUTION-029: Selected Property Marker Highlighting
+
+**Problem:** Clicking a property card opened the InfoWindow but the map marker didn't stand out — hard to tell which pin corresponded to the selected property.
+
+**Solution:**
+1. `getPropertyMarkerIcon` now renders a visually distinct icon when `isSelected=true`:
+   - Size 40×52 px vs 26×34 px normal (~1.5×)
+   - 5 px white stroke with `paint-order="stroke fill"` creates a visible halo ring around the pin; viewBox padded to `-3 -3 34 42` so halo isn't clipped at edges
+2. Added `BOUNCE` animation via `window.google.maps.Animation.BOUNCE` for 2 s on selection; a `setTimeout` stops it to avoid distraction. Timer is tracked in `animationTimerRef` and cleaned up on unmount / re-selection
+3. `PropertyMarker` raises `zIndex` from 100 → 1000 when selected (appears on top of all other markers)
+4. New `isAnimating` prop wires the timer state into `PropertyMarker`'s `animation` derived value
+
+**Files:** `lib/mapUtils.js`, `components/map/SafetyMap.jsx`
+
+---
+
 *Last updated: 2026-04-11*
-*Solutions: 28*
+*Solutions: 29*
