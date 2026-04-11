@@ -720,5 +720,20 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+## SOLUTION-030: InfoWindow Covers Selected Marker
+
+**Problem:** Property InfoWindow opened directly on top of the selected marker, hiding the 52 px pin body and the BOUNCE animation.
+
+**Root cause:** `InfoWindow` positioned at the same lat/lng as the marker anchor (pin tip). With no `pixelOffset`, the InfoWindow tail tip sits at the pin tip; the bubble extends upward but still overlaps the 52 px marker body.
+
+**Solution:** Added `pixelOffset: new window.google.maps.Size(0, -55)` to the InfoWindow options.
+- Selected marker height = 52 px; +3 px gap → 55 px offset moves the InfoWindow tail tip 55 px above the pin tip
+- InfoWindow bubble now appears entirely above the marker body; bounce animation remains fully visible
+- No offset needed for the zone InfoWindow (uses centroid, not a pin anchor)
+
+**Files:** `components/map/SafetyMap.jsx`
+
+---
+
 *Last updated: 2026-04-11*
-*Solutions: 29*
+*Solutions: 30*

@@ -564,11 +564,17 @@ export default function SafetyMap({
         )}
 
         {/* ── Property InfoWindow ── */}
+        {/* pixelOffset -55 = selected marker height (52 px) + 3 px gap, so the
+            InfoWindow tail tip sits just above the pin top and the bounce animation
+            remains fully visible below it. */}
         {selectedProperty && selectedProperty.lat && selectedProperty.lng && (
           <InfoWindow
             position={{ lat: Number(selectedProperty.lat), lng: Number(selectedProperty.lng) }}
             onCloseClick={() => onPropertySelect?.(null)}
-            options={{ maxWidth: 300 }}
+            options={{
+              maxWidth: 300,
+              pixelOffset: new window.google.maps.Size(0, -55),
+            }}
           >
             <PropertyInfoContent property={selectedProperty} />
           </InfoWindow>
