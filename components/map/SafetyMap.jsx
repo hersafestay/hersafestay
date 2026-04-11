@@ -258,7 +258,7 @@ function PropertyInfoContent({ property }) {
       )}
 
       {property.safety_features?.length > 0 && (
-        <div>
+        <div style={{ marginBottom: '10px' }}>
           <div style={{ fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px' }}>
             Safety Features
           </div>
@@ -267,6 +267,27 @@ function PropertyInfoContent({ property }) {
           </ul>
         </div>
       )}
+
+      <div style={{ paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
+        <a
+          href={`/property/${property.id}`}
+          style={{
+            display: 'inline-block',
+            padding: '7px 16px',
+            background: '#FF6B6B',
+            color: 'white',
+            borderRadius: '7px',
+            fontSize: '13px',
+            fontWeight: '700',
+            textDecoration: 'none',
+            width: '100%',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          View Full Details →
+        </a>
+      </div>
     </div>
   );
 }

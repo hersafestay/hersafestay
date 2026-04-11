@@ -735,5 +735,24 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+## SOLUTION-031: Property Detail Pages
+
+**Date:** 2026-04-11
+**Feature:** Individual property detail pages at `/property/[id]`.
+
+**Implementation:**
+- `getPropertyById` — new DB function that joins `safety_zones` (all score fields, tips) and `cities` in one query
+- `getNearbyProperties` — returns up to 4 other properties in the same city with zone join
+- `app/property/[id]/page.js` — ISR server component (`revalidate = 3600`); `generateStaticParams` pre-builds all published property paths; `generateMetadata` provides per-property SEO
+- `components/property/PropertyDetailView.jsx` — server component; sections: sticky nav, hero (image or styled emoji placeholder), breadcrumbs, badges, quick stats bar, about, safety features grid, neighbourhood safety (zone description + tips), reviews placeholder, booking card (sticky on desktop), safety score breakdown bars, nearby properties grid
+- `booking_url` validated with `safeHref()` to prevent `javascript:` injection (SECURITY.md §5)
+- `components/map/PropertyList.jsx` — "View Details →" link in each card (`stopPropagation` so card click still selects on the map)
+- `components/map/SafetyMap.jsx` — "View Full Details →" CTA button in property InfoWindow
+
+**Files created:** `app/property/[id]/page.js`, `app/property/[id]/loading.js`, `app/property/[id]/not-found.js`, `components/property/PropertyDetailView.jsx`
+**Files updated:** `lib/database.js`, `components/map/PropertyList.jsx`, `components/map/SafetyMap.jsx`
+
+---
+
 *Last updated: 2026-04-11*
-*Solutions: 30*
+*Solutions: 31*

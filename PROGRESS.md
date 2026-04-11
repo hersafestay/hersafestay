@@ -412,7 +412,12 @@
 > 5 cities. Perfect on phone. 5-minute session on iPhone — no confusion, no broken layout, no frustration.
 
 **Notes / Blockers:**
-> _[Add notes as you go]_
+> Property detail pages shipped ahead of schedule (originally Day 10). Added as an additional Day 6 deliverable.
+> - Dynamic route `/property/[id]` with ISR (revalidate 1 hr) and `generateStaticParams`
+> - `PropertyDetailView` server component: hero, stats bar, about, safety features grid, neighbourhood safety, safety score breakdown bars, booking CTA (sticky sidebar), nearby properties
+> - `booking_url` validated to prevent javascript: injection (SECURITY.md §5)
+> - "View Details →" link added to PropertyList cards (stopPropagation preserves map selection)
+> - "View Full Details →" CTA added to map InfoWindow
 
 ---
 

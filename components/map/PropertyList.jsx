@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, memo, useState } from 'react';
+import Link from 'next/link';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -223,6 +224,23 @@ const PropertyCard = memo(function PropertyCard({
             )}
           </div>
         )}
+
+        {/* View Details link — stopPropagation so card click still selects on map */}
+        <Link
+          href={`/property/${property.id}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'inline-block',
+            marginTop: '7px',
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#FF6B6B',
+            textDecoration: 'none',
+            letterSpacing: '0.01em',
+          }}
+        >
+          View Details →
+        </Link>
       </div>
     </div>
   );
