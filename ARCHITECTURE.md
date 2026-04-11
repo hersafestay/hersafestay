@@ -15,6 +15,7 @@
 7. [Performance Strategy](#7-performance-strategy)
 8. [Mobile-First Design](#8-mobile-first-design)
 9. [Scaling: 5 Cities → 500 Cities](#9-scaling-5-cities--500-cities)
+10. [Security Architecture](#10-security-architecture) ← READ BEFORE SHIPPING
 
 ---
 
@@ -913,5 +914,133 @@ The architecture supports linear scaling. No redesign needed to go from 5 to 500
 
 ---
 
-*Last updated: 2026-04-04*
-*Version: 1.0 — Initial architecture for MVP*
+---
+
+## 10. Security Architecture
+
+> **Full security documentation:** See [SECURITY.md](./SECURITY.md)
+> **Prompt templates with security:** See [CLAUDE_CODE_TEMPLATE.md](./CLAUDE_CODE_TEMPLATE.md)
+> **Copy-paste table template:** See [supabase/templates/secure_table_template.sql](./supabase/templates/secure_table_template.sql)
+
+---
+
+### 10.1 Security-First Principles
+
+**Every architectural decision follows these principles, in order:**
+
+1. **RLS is mandatory** — No Supabase table ships without Row Level Security enabled
+2. **Principle of least privilege** — APIs and users get only the access they need
+3. **Secrets never leave the server** — Service role keys, server API keys are server-side only
+4. **Defense in depth** — Multiple security layers, never relying on one control alone
+5. **Validate at boundaries** — User input is untrusted; validate before processing
+
+---
+
+### 10.2 Defense in Depth
+
+```
+LAYER 1: Network
+  ├── HTTPS only (Vercel enforces this)
+  ├── Google Maps API key: HTTP referrer restricted
+  └── Vercel: DDoS protection included
+
+LAYER 2: Application
+  ├── Input validation on all API endpoints
+  ├── Rate limiting on user-submission endpoints
+  ├── Content Security Policy headers
+  └── XSS prevention (no dangerouslySetInnerHTML with user content)
+
+LAYER 3: Database (Supabase)
+  ├── Row Level Security on ALL tables (mandatory)
+  ├── Anon key: read-only, filtered by RLS policies
+  ├── Service role key: server-side only, never in client bundle
+  └── PostGIS: parameterized spatial queries only
+
+LAYER 4: Secrets Management
+  ├── .env.local excluded from git (.gitignore covers .env*)
+  ├── Secrets in Vercel dashboard (not in codebase)
+  └── No secrets in NEXT_PUBLIC_* variables (except anon key + Maps key)
+```
+
+---
+
+### 10.3 Environment Variable Security Model
+
+| Variable | Visible in Browser | Protection Mechanism |
+|----------|-------------------|---------------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | OK — URL is not sensitive |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | RLS policies are the guard |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Yes | HTTP referrer restriction |
+| `SUPABASE_SERVICE_ROLE_KEY` | **NO** | Server-side only, bypasses RLS |
+
+**The anon key is designed to be public.** RLS policies control what it can access.
+**The service role key is NEVER public.** It bypasses all security controls.
+
+---
+
+### 10.4 RLS Policy Architecture Per Table
+
+| Table | RLS Pattern | Who Can Read | Who Can Write |
+|-------|------------|-------------|--------------|
+| `cities` | Pattern A | Public (published only) | Admin via service role |
+| `safety_zones` | Pattern A | Public (published only) | Admin via service role |
+| `properties` | Pattern A | Public (published only) | Admin via service role |
+| `zone_reports` | Pattern B | Report submitter only | Anyone (anonymous OK) |
+| Future: `user_profiles` | Pattern B | User (own only) | Authenticated users |
+| Future: `admin_logs` | Pattern C | Nobody (service role only) | Service role only |
+
+---
+
+### 10.5 Security Checklist for New Features
+
+Before shipping any new feature, complete this checklist:
+
+```
+DATABASE CHANGES
+[ ] New tables: RLS enabled immediately after CREATE TABLE
+[ ] New tables: Policies created matching data sensitivity
+[ ] New tables: Verification query passed (see SECURITY.md Section 2)
+[ ] New columns: Check if sensitive data is now exposed in existing policies
+
+API CHANGES
+[ ] New endpoints: Input validation for all parameters
+[ ] POST/PUT/DELETE: Rate limiting configured
+[ ] New endpoints: Uses anon client (not admin) for public operations
+[ ] Response: No sensitive fields leaked (email, IP, hashes)
+
+FRONTEND CHANGES
+[ ] No dangerouslySetInnerHTML with database/user content
+[ ] Forms: Input sanitization before submission
+[ ] New booking URLs: Validated against allowlist
+
+SECRETS
+[ ] No new secrets added to source files
+[ ] New env vars: server-only vars do NOT have NEXT_PUBLIC_ prefix
+[ ] git diff --staged shows no accidental secret exposure
+```
+
+---
+
+### 10.6 Security Review Gates
+
+These are mandatory stops before code reaches production:
+
+**Gate 1 — New Table:**
+- Run RLS verification query → all tables show `rowsecurity = true`
+- Test with anon key → only expected data returned
+- Document in ARCHITECTURE.md Section 3
+
+**Gate 2 — New API Endpoint:**
+- curl test returns correct data for valid inputs
+- curl test returns 4xx for invalid/unauthorized inputs
+- No sensitive fields in response body
+
+**Gate 3 — Pre-Production Deployment:**
+- Complete checklist from SECURITY.md Section 6
+- No secrets in client JavaScript bundle
+- Google Maps API key restrictions verified
+
+---
+
+*Last updated: 2026-04-11*
+*Version: 1.1 — Added Security Architecture (Section 10)*
