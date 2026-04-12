@@ -722,10 +722,9 @@ function BangkokSafetyMap() {
 // ── Responsive breakpoint hook ───────────────────────────────────────────────
 
 function useBreakpoint() {
-  const [width, setWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
-  );
+  const [width, setWidth] = useState(1200); // match server default — avoids hydration mismatch
   useEffect(() => {
+    setWidth(window.innerWidth); // sync real width after hydration
     function onResize() { setWidth(window.innerWidth); }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
