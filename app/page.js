@@ -1166,11 +1166,11 @@ export default function Page() {
                     onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(255,107,107,0.35), 0 1px 4px rgba(0,0,0,0.08)"; }}
                   >
                     <span style={{ fontSize: "20px" }}>🗺️</span>
-                    View Barcelona Safety Map
+                    Explore the Safety Map
                     <span style={{ fontSize: "18px" }}>→</span>
                   </a>
                   <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#9ca3af" }}>
-                    5 neighborhoods · Color-coded safety zones · Click any area for details
+                    Barcelona · Paris · Bangkok · Color-coded safety zones · Click any area for details
                   </p>
                 </div>
 
@@ -1458,6 +1458,333 @@ export default function Page() {
             </div>
           </div>
         </main>
+      )}
+
+      {/* ── How It Works ── */}
+      {!searched && (
+        <section
+          style={{
+            padding: isMobile ? "52px 16px 44px" : isTablet ? "64px 24px 52px" : "72px 60px 60px",
+            background: "linear-gradient(160deg, #FFF8F0 0%, #FFF4E8 50%, #F0FBF9 100%)",
+            borderTop: "1px solid #FFE8D6",
+          }}
+        >
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+
+            {/* Section header */}
+            <div style={{ textAlign: "center", marginBottom: isMobile ? "36px" : "52px" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 18px",
+                  borderRadius: "999px",
+                  background: "rgba(255,107,107,0.08)",
+                  border: "1px solid rgba(255,107,107,0.2)",
+                  marginBottom: "14px",
+                }}
+              >
+                <span style={{ fontSize: "13px", fontWeight: "700", color: "#FF6B6B", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  Simple & Powerful
+                </span>
+              </div>
+              <h2
+                style={{
+                  fontSize: isMobile ? "clamp(26px, 7vw, 36px)" : "clamp(30px, 3.5vw, 44px)",
+                  fontWeight: "700",
+                  color: "#2B2D42",
+                  lineHeight: "1.2",
+                  letterSpacing: "-0.02em",
+                  marginBottom: "12px",
+                  fontFamily: "inherit",
+                }}
+              >
+                How It Works
+              </h2>
+              <p
+                style={{
+                  fontSize: isMobile ? "16px" : "19px",
+                  color: "#78716c",
+                  maxWidth: "500px",
+                  margin: "0 auto",
+                  lineHeight: "1.6",
+                }}
+              >
+                Find a safe place to stay in three simple steps
+              </p>
+            </div>
+
+            {/* 3-step grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+                gap: isMobile ? "20px" : "28px",
+                position: "relative",
+              }}
+            >
+              {[
+                {
+                  step: "01",
+                  emoji: "🗺️",
+                  title: "Explore Safety Maps",
+                  body: "Browse color-coded neighborhood safety zones for Barcelona, Paris, Bangkok, and more. Green means safe, amber means caution — instantly clear at a glance.",
+                  accent: "#FF6B6B",
+                  bg: "rgba(255,107,107,0.06)",
+                  border: "rgba(255,107,107,0.15)",
+                },
+                {
+                  step: "02",
+                  emoji: "🏨",
+                  title: "Find Safe Properties",
+                  body: "Filter hotels, hostels, and apartments by safety rating, price, and property type. Every listing includes women's reviews and a detailed safety feature list.",
+                  accent: "#2D6A4F",
+                  bg: "rgba(45,106,79,0.06)",
+                  border: "rgba(45,106,79,0.15)",
+                },
+                {
+                  step: "03",
+                  emoji: "✅",
+                  title: "Book with Confidence",
+                  body: "Click any property to read the full safety profile — security features, neighborhood score, and tips from women who've stayed there. Then book directly.",
+                  accent: "#2A9D8F",
+                  bg: "rgba(42,157,143,0.06)",
+                  border: "rgba(42,157,143,0.15)",
+                },
+              ].map(({ step, emoji, title, body, accent, bg, border }, i) => (
+                <div
+                  key={step}
+                  style={{
+                    background: "white",
+                    borderRadius: "20px",
+                    padding: isMobile ? "28px 24px" : "32px 28px",
+                    border: `1px solid ${border}`,
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+                    position: "relative",
+                    animation: `fadeInUp 0.5s ease ${i * 0.12}s both`,
+                  }}
+                >
+                  {/* Step number */}
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "800",
+                      color: accent,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      marginBottom: "14px",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Step {step}
+                  </div>
+
+                  {/* Emoji icon */}
+                  <div
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "16px",
+                      background: bg,
+                      border: `1.5px solid ${border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "28px",
+                      marginBottom: "18px",
+                    }}
+                  >
+                    {emoji}
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    style={{
+                      fontSize: isMobile ? "19px" : "21px",
+                      fontWeight: "700",
+                      color: "#2B2D42",
+                      marginBottom: "10px",
+                      lineHeight: "1.25",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {title}
+                  </h3>
+
+                  {/* Body */}
+                  <p
+                    style={{
+                      fontSize: "16px",
+                      color: "#57534e",
+                      lineHeight: "1.65",
+                      margin: 0,
+                    }}
+                  >
+                    {body}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Bottom CTA */}
+            <div style={{ textAlign: "center", marginTop: isMobile ? "36px" : "48px" }}>
+              <a
+                href="/map"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: isMobile ? "13px 28px" : "15px 36px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #2D6A4F, #1B4332)",
+                  color: "white",
+                  fontSize: isMobile ? "15px" : "17px",
+                  fontWeight: "700",
+                  fontFamily: "inherit",
+                  textDecoration: "none",
+                  boxShadow: "0 4px 16px rgba(45,106,79,0.3)",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(45,106,79,0.38)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 16px rgba(45,106,79,0.3)";
+                }}
+              >
+                <span>🗺️</span>
+                Start Exploring Safely
+                <span>→</span>
+              </a>
+            </div>
+
+          </div>
+        </section>
+      )}
+
+      {/* ── Why HerSafeStay — trust signals ── */}
+      {!searched && (
+        <section
+          style={{
+            padding: isMobile ? "52px 16px 44px" : isTablet ? "64px 24px 52px" : "72px 60px 60px",
+            background: "white",
+            borderTop: "1px solid #FFE8D6",
+          }}
+        >
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+
+            <div style={{ textAlign: "center", marginBottom: isMobile ? "36px" : "52px" }}>
+              <h2
+                style={{
+                  fontSize: isMobile ? "clamp(26px, 7vw, 36px)" : "clamp(30px, 3.5vw, 44px)",
+                  fontWeight: "700",
+                  color: "#2B2D42",
+                  lineHeight: "1.2",
+                  letterSpacing: "-0.02em",
+                  marginBottom: "12px",
+                  fontFamily: "inherit",
+                }}
+              >
+                Why Women Choose{" "}
+                <span style={{ color: "#FF6B6B" }}>HerSafeStay</span>
+              </h2>
+              <p style={{ fontSize: isMobile ? "16px" : "19px", color: "#78716c", maxWidth: "480px", margin: "0 auto", lineHeight: "1.6" }}>
+                Built from the ground up for solo female travelers
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(3, 1fr)",
+                gap: isMobile ? "16px" : "20px",
+              }}
+            >
+              {[
+                {
+                  icon: "🛡️",
+                  title: "Safety-First Ratings",
+                  body: "Every neighborhood rated on crime data, women's reviews, walkability, and time-of-day safety — not just generic star ratings.",
+                },
+                {
+                  icon: "👩",
+                  title: "Women's Perspective",
+                  body: "Safety scores derived from reviews by women travelers. We filter out reviews that don't address the concerns solo female travelers actually have.",
+                },
+                {
+                  icon: "🗺️",
+                  title: "Interactive Safety Maps",
+                  body: "See exactly which neighborhoods are safe before you book. Not vague 'safe area' claims — actual polygon zones with transparency scores.",
+                },
+                {
+                  icon: "✅",
+                  title: "Verified Properties",
+                  body: "Every listing checked for safety features: 24/7 security, CCTV, keycard access, women-only floors, and well-lit entrances.",
+                },
+                {
+                  icon: "📍",
+                  title: "Know Before You Go",
+                  body: "Safety tips for every neighborhood — which streets to walk, where to avoid at night, and local emergency numbers — all in one place.",
+                },
+                {
+                  icon: "🌍",
+                  title: "Growing Every Day",
+                  body: "Starting with Barcelona, Paris, and Bangkok. Expanding to 5 cities and beyond. Community-powered with your safety reports feeding future scores.",
+                },
+              ].map(({ icon, title, body }) => (
+                <div
+                  key={title}
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    alignItems: "flex-start",
+                    padding: isMobile ? "20px 18px" : "22px 20px",
+                    borderRadius: "14px",
+                    background: "#FAFAF9",
+                    border: "1px solid #FFE8D6",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      background: "rgba(255,107,107,0.07)",
+                      border: "1.5px solid rgba(255,107,107,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "22px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {icon}
+                  </div>
+                  <div>
+                    <h3
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "700",
+                        color: "#2B2D42",
+                        marginBottom: "6px",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {title}
+                    </h3>
+                    <p style={{ fontSize: "15px", color: "#78716c", lineHeight: "1.55", margin: 0 }}>
+                      {body}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
       )}
 
       {/* ── Coming Soon ── */}

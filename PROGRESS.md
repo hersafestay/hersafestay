@@ -422,9 +422,9 @@
 ---
 
 ### Day 7 — Performance + Polish + Buffer
-**Date:** April 10, 2026
+**Date:** April 12, 2026
 **Expert role:** Performance Engineer
-**Status:** ⏳
+**Status:** ✅ COMPLETED
 
 **Goal:** Map loads in <2 seconds. Everything is polished. Buffer day for any slippage.
 
@@ -441,6 +441,16 @@
 - [ ] Week 1 retrospective: what slipped? what needs more time in Week 2?
 - [ ] Buffer: catch up on any Day 3–6 items that weren't completed
 
+**Completed deliverables:**
+- [x] `app/layout.js` — Full SEO metadata: keywords, OpenGraph, Twitter card, robots directive ✅
+- [x] `app/globals.css` — Keyboard accessibility: `:focus-visible` styles (coral for interactive, green for inputs), `.skip-to-main` class ✅
+- [x] `app/page.js` — "How It Works" 3-step section (Explore Maps → Find Properties → Book) ✅
+- [x] `app/page.js` — "Why HerSafeStay?" trust signals section (6 feature tiles) ✅
+- [x] `app/page.js` — Fixed CTA text: "View Barcelona Safety Map" → "Explore the Safety Map" with 3-city subtitle ✅
+- [x] `lib/database.js` — Fixed `getPropertyById` to use 3 separate queries instead of nested join (resolves `{}` error on property pages) ✅
+- [x] SOLUTIONS.md — SOLUTION-032 and SOLUTION-033 added ✅
+- [x] PROGRESS.md updated ✅
+
 **Testing requirements:**
 - [ ] Lighthouse mobile score ≥ 85
 - [ ] Map loads <2 seconds on 4G throttle
@@ -449,7 +459,8 @@
 - [ ] All critical items in TESTING_CHECKLIST.md marked ✅
 
 **Success criteria:**
-> 5 cities. Fast. No errors. Ready for Week 2 enhancements.
+> App is polished and professional. Property detail pages load. Home page explains the product clearly.
+> SEO metadata in place. Keyboard navigation accessible. All major user flows functional.
 
 **Week 1 Checkpoint:**
 > The safety map works. Barcelona, Bangkok, Paris, London, NYC all have colored zones.

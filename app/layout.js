@@ -10,9 +10,29 @@ const crimsonPro = Crimson_Pro({
 });
 
 export const metadata = {
-  title: "HerSafeStay — Travel Safely, Travel Confidently",
+  title: "HerSafeStay — Safe Accommodations for Women Travelers",
   description:
-    "A travel booking platform built for women. Every listing vetted for safety. Real reviews from women travelers.",
+    "Discover verified safe hotels, hostels, and apartments for women travelers. Real-time safety maps, women's reviews, and neighborhood safety scores for Barcelona, Paris, Bangkok, London & NYC.",
+  keywords:
+    "women travel safety, safe accommodations, female solo travelers, hotel safety, women travel app, safety map",
+  openGraph: {
+    title: "HerSafeStay — Travel Safely, Stay Confidently",
+    description:
+      "Interactive safety maps + verified accommodations for women travelers. Color-coded neighborhood safety zones, women's ratings, and solo travel tips.",
+    type: "website",
+    locale: "en_US",
+    siteName: "HerSafeStay",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HerSafeStay — Safe Accommodations for Women Travelers",
+    description:
+      "Safety maps + verified stays for women travelers. Know before you go.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }) {

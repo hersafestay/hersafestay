@@ -754,5 +754,43 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
-*Last updated: 2026-04-11*
-*Solutions: 31*
+## SOLUTION-032: Home Page Missing "How It Works" & Trust Signals
+
+**Date:** 2026-04-12
+**Phase:** Day 7 — Polish & Testing
+
+**Problem:** Landing page jumped directly from hero to "Coming Soon" products with no explanation of how the product works for first-time visitors. New users needed orientation.
+
+**Solution:**
+1. Added "How It Works" section (3 steps: Explore Maps → Find Properties → Book with Confidence) between the hero and Coming Soon sections — visible only in `!searched` state.
+2. Added "Why HerSafeStay?" trust signals section (6 feature tiles) below How It Works.
+3. Fixed "View Barcelona Safety Map" CTA text to "Explore the Safety Map" (supports 3 cities now, not just Barcelona).
+4. Updated CTA subtitle to list all 3 supported cities.
+
+**Files:** `app/page.js`
+
+---
+
+## SOLUTION-033: SEO Metadata & Accessibility
+
+**Date:** 2026-04-12
+**Phase:** Day 7 — Polish & Testing
+
+**Problem A:** `app/layout.js` had minimal metadata — no keywords, OpenGraph, or Twitter card. Low SEO signal for search engines and poor social preview when sharing the URL.
+
+**Solution A:** Added full metadata object including `keywords`, `openGraph` (title, description, type, locale, siteName), `twitter` (card type), and `robots` (index + follow).
+
+**Problem B:** No visible focus states for keyboard navigation. All focus outlines were either absent or used default browser styles inconsistent with the brand.
+
+**Solution B:** Added to `app/globals.css`:
+- `:focus { outline: none }` to suppress default ring for mouse users
+- `:focus-visible { outline: 3px solid #FF6B6B }` for keyboard nav — coral brand color
+- `input:focus-visible { outline: 2px solid #2D6A4F }` — green for form context
+- `.skip-to-main` class for a visually-hidden skip link that appears on focus
+
+**Files:** `app/layout.js`, `app/globals.css`
+
+---
+
+*Last updated: 2026-04-12*
+*Solutions: 33*

@@ -64,6 +64,60 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   accept the popup at the browser's default size.
 */
 
+/* ── Accessibility: keyboard focus ── */
+
+/*
+ * Remove default focus ring for mouse users.
+ * Restore a visible focus ring for keyboard users.
+ * Using :focus-visible ensures mouse clicks don't show outlines,
+ * while keyboard navigation gets a clear visual indicator.
+ */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 3px solid #FF6B6B;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Buttons and links get a tighter border-radius */
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #FF6B6B;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Inputs use green to match form context */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #2D6A4F;
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* Skip-to-main-content link (visually hidden until focused) */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: #FF6B6B;
+  color: white;
+  font-weight: 700;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
