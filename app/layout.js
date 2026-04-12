@@ -1,5 +1,6 @@
 import { Crimson_Pro } from "next/font/google";
 import Script from "next/script";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const crimsonPro = Crimson_Pro({
@@ -57,7 +58,9 @@ export default function RootLayout({ children }) {
         className={crimsonPro.variable}
         style={{ fontFamily: "var(--font-crimson-pro), Georgia, serif" }}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

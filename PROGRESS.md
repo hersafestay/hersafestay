@@ -473,7 +473,59 @@
 
 ---
 
-### Day 8 — City Landing Pages + SEO
+### Day 8 — User Authentication ✅ COMPLETED
+**Date:** April 12, 2026
+**Expert role:** Full-Stack Engineer + Security
+**Status:** ✅ COMPLETED
+
+**Goal:** Secure user authentication with Supabase Auth — sign up, login, profile, password reset, protected routes.
+
+#### Deliverables
+
+- [x] `@supabase/ssr` installed (replaces deprecated `auth-helpers-nextjs`) ✅
+- [x] `contexts/AuthContext.jsx` — global auth state (user, loading, signUp, signIn, signOut, resetPassword) ✅
+- [x] `app/layout.js` — wrapped with `<AuthProvider>` ✅
+- [x] `app/auth/signup/page.js` — sign-up form with email + password + name ✅
+- [x] `app/auth/login/page.js` — login form, redirects to /map on success ✅
+- [x] `app/auth/reset-password/page.js` — password reset email flow ✅
+- [x] `app/api/users/profile/route.js` — POST endpoint to create profile (admin client, validates auth.uid before insert) ✅
+- [x] `app/profile/page.js` — protected profile page (redirects to login if not authenticated) ✅
+- [x] `components/common/Header.jsx` — auth-aware nav (Log In / Sign Up when logged out; Profile / Saved when logged in) ✅
+- [x] `middleware.js` — route protection for /profile/* and /saved/* using `@supabase/ssr` ✅
+- [x] SOLUTIONS.md — SOLUTION-034 (deprecated helpers) + SOLUTION-035 (pre-confirmation profile) ✅
+
+**SQL to run in Supabase Dashboard:**
+```sql
+-- Run in Supabase SQL Editor
+CREATE TABLE user_profiles (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  avatar_url TEXT,
+  bio TEXT,
+  home_city TEXT,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_profiles_public_read" ON user_profiles FOR SELECT USING (is_published = true);
+CREATE POLICY "user_profiles_owner_all" ON user_profiles FOR ALL USING (auth.uid() = user_id);
+CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
+```
+
+**Notes:**
+- Use `@supabase/ssr` for all server-side Supabase clients — `auth-helpers-nextjs` is deprecated (SOLUTION-034)
+- Profile creation uses admin client to handle pre-email-confirmation state (SOLUTION-035)
+- All auth pages use inline styles matching the HerSafeStay design system (no Tailwind)
+- Middleware uses `@supabase/ssr` `createServerClient` with cookie get/set callbacks
+
+**Next:** Day 9 — User Safety Report System
+
+---
+
+### Day 8 (Original) — City Landing Pages + SEO
 **Date:** April 11, 2026
 **Expert role:** SEO Engineer + Content Strategist
 **Status:** ⏳

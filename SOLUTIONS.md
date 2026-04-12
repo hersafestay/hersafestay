@@ -792,5 +792,52 @@ Stop propagation on the property marker click so the map background click doesn'
 
 ---
 
+---
+
+## SOLUTION-034: Supabase Auth — @supabase/auth-helpers-nextjs is deprecated
+
+**Date:** 2026-04-12
+**Phase:** Day 8 — User Authentication
+
+**Problem:** Task prompt referenced `createMiddlewareClient` from `@supabase/auth-helpers-nextjs` for Next.js App Router middleware. This package is deprecated and replaced by `@supabase/ssr`.
+
+**Root cause:** Supabase deprecated `auth-helpers-nextjs` in favour of `@supabase/ssr` which supports App Router, Server Components, and middleware natively.
+
+**Solution:** Install `@supabase/ssr` and use `createServerClient` in middleware:
+```javascript
+import { createServerClient } from '@supabase/ssr';
+
+const supabase = createServerClient(url, anonKey, {
+  cookies: {
+    getAll() { return request.cookies.getAll(); },
+    setAll(cookiesToSet) { /* set on response */ },
+  },
+});
+```
+
+**Prevention:** Always use `@supabase/ssr` for server-side Supabase clients in Next.js App Router. Do not install `@supabase/auth-helpers-nextjs`.
+
+**Files:** `middleware.js`, `package.json`
+
+---
+
+## SOLUTION-035: Profile creation before email confirmation
+
+**Date:** 2026-04-12
+**Phase:** Day 8 — User Authentication
+
+**Problem:** After `supabase.auth.signUp()`, the user exists in `auth.users` but hasn't confirmed their email. The RLS policy `user_profiles_owner_all` uses `auth.uid() = user_id`. Before confirmation, the anon client's `auth.uid()` may return the user's id, but calling `supabase.from('user_profiles').insert()` from the client could fail if the session hasn't propagated.
+
+**Solution:** Create a server-side API route `/api/users/profile` (POST) that uses the admin client (`createAdminClient()` with service role key). The route validates the `user_id` by calling `supabaseAdmin.auth.admin.getUserById(user_id)` before inserting the profile. This is secure because:
+1. Service role key is server-side only
+2. We verify the user actually exists in auth.users before creating the profile
+3. `upsert` with `onConflict: 'user_id'` prevents duplicate profiles
+
+**Prevention:** Always use server-side admin API for operations that happen before email confirmation.
+
+**Files:** `app/api/users/profile/route.js`
+
+---
+
 *Last updated: 2026-04-12*
-*Solutions: 33*
+*Solutions: 35*
