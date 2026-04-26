@@ -36,7 +36,8 @@
       "Bash(npm install @supabase/ssr)",
       "Bash(npm run build 2>&1)",
       "Bash(git add contexts/AuthContext.jsx app/auth/signup/page.js app/auth/login/page.js app/auth/reset-password/page.js app/api/users/profile/route.js app/profile/page.js components/common/Header.jsx proxy.js app/layout.js SOLUTIONS.md PROGRESS.md package.json package-lock.json)",
-      "Bash(git commit -m \"$\\(cat <<'EOF'\nDay 8 complete - user authentication with Supabase Auth\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nDay 8 complete - user authentication with Supabase Auth\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(grep -r \"createBrowserClient\" /Users/alinellobet/Projects/hersafestay/node_modules/@supabase/ssr/dist --include=\"*.js\" -l 2>/dev/null | head -3)"
     ]
   }
 }

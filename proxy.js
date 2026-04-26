@@ -25,8 +25,9 @@ export async function proxy(request) {
     }
   );
 
-  // Refresh session if it exists
-  const { data: { session } } = await supabase.auth.getSession();
+  // getUser() validates the JWT with Supabase servers and refreshes if expired.
+  // This is the correct approach for middleware per @supabase/ssr docs.
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Protected routes — redirect to login if not authenticated
   const protectedRoutes = ['/profile', '/saved'];
@@ -34,7 +35,7 @@ export async function proxy(request) {
     request.nextUrl.pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/auth/login';
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname);

@@ -10,14 +10,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
+    // onAuthStateChange fires an INITIAL_SESSION event on mount with the current
+    // session — no separate getSession() call needed. Using cookie-based storage
+    // (createBrowserClient) means the session is also visible to proxy.js middleware.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        console.log('[AuthContext] event:', event, '| user:', session?.user?.email ?? null);
         setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 

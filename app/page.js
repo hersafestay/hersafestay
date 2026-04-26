@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Shield,
   MapPin,
@@ -739,6 +741,7 @@ function useBreakpoint() {
 // ── Main Page ───────────────────────────────────────────────────────────────
 
 export default function Page() {
+  const { user, loading: authLoading } = useAuth();
   const [searched, setSearched] = useState(false);
   const [destination, setDestination] = useState("Bangkok, Thailand");
   const [checkIn, setCheckIn] = useState("");
@@ -880,46 +883,104 @@ export default function Page() {
                   {item}
                 </a>
               ))}
-            <button
-              style={{
-                padding: isTablet ? "8px 18px" : "10px 24px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #e11d48, #9d174d)",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: isTablet ? "14px" : "17px",
-                fontWeight: "600",
-                fontFamily: "inherit",
-                boxShadow: "0 2px 8px rgba(225,29,72,0.28)",
-                whiteSpace: "nowrap",
-                minHeight: "44px",
-              }}
-            >
-              Sign In
-            </button>
+            {!authLoading && (user ? (
+              <>
+                <Link
+                  href="/profile/saved"
+                  style={{ fontSize: isTablet ? "15px" : "18px", color: "#57534e", fontWeight: "500", textDecoration: "none" }}
+                >
+                  Saved
+                </Link>
+                <Link
+                  href="/profile"
+                  style={{
+                    padding: isTablet ? "8px 18px" : "10px 24px",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #2D6A4F, #1a4a36)",
+                    color: "white",
+                    fontSize: isTablet ? "14px" : "17px",
+                    fontWeight: "600",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    minHeight: "44px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Profile
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  style={{ fontSize: isTablet ? "15px" : "18px", color: "#57534e", fontWeight: "500", textDecoration: "none" }}
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  style={{
+                    padding: isTablet ? "8px 18px" : "10px 24px",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #FF6B6B, #e85555)",
+                    color: "white",
+                    fontSize: isTablet ? "14px" : "17px",
+                    fontWeight: "600",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    minHeight: "44px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Sign Up
+                </Link>
+              </>
+            ))}
           </nav>
         )}
 
         {/* Mobile: Sign In + hamburger */}
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #e11d48, #9d174d)",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "600",
-                fontFamily: "inherit",
-                minHeight: "44px",
-              }}
-            >
-              Sign In
-            </button>
+            {!authLoading && (user ? (
+              <Link
+                href="/profile"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  background: "linear-gradient(135deg, #2D6A4F, #1a4a36)",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  minHeight: "44px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                Profile
+              </Link>
+            ) : (
+              <Link
+                href="/auth/signup"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  background: "linear-gradient(135deg, #FF6B6B, #e85555)",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  minHeight: "44px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                Sign Up
+              </Link>
+            ))}
             <button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="Toggle menu"
@@ -993,6 +1054,41 @@ export default function Page() {
               >
                 {item}
               </a>
+            ))}
+            {!authLoading && (user ? (
+              <>
+                <Link
+                  href="/profile/saved"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "16px 20px", fontSize: "17px", color: "#2B2D42", fontWeight: "500", borderBottom: "1px solid #FFF4E8", minHeight: "52px", textDecoration: "none" }}
+                >
+                  Saved
+                </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "16px 20px", fontSize: "17px", color: "#2D6A4F", fontWeight: "600", minHeight: "52px", textDecoration: "none" }}
+                >
+                  Profile
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "16px 20px", fontSize: "17px", color: "#2B2D42", fontWeight: "500", borderBottom: "1px solid #FFF4E8", minHeight: "52px", textDecoration: "none" }}
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: "block", padding: "16px 20px", fontSize: "17px", color: "#FF6B6B", fontWeight: "600", minHeight: "52px", textDecoration: "none" }}
+                >
+                  Sign Up
+                </Link>
+              </>
             ))}
           </div>
         )}

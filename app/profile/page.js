@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -11,9 +11,10 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const signingOut = useRef(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !signingOut.current) {
       router.push('/auth/login');
     }
   }, [user, authLoading, router]);
@@ -35,7 +36,16 @@ export default function ProfilePage() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    console.log('[ProfilePage] Sign out button clicked');
+    signingOut.current = true;
+    try {
+      await signOut();
+      console.log('[ProfilePage] signOut() resolved — redirecting to /');
+    } catch (err) {
+      console.error('[ProfilePage] signOut() error:', err);
+      signingOut.current = false;
+      return;
+    }
     router.push('/');
   };
 

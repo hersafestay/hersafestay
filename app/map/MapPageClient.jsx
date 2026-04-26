@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import CitySelector from '@/components/map/CitySelector';
 import PropertyList from '@/components/map/PropertyList';
+import { useAuth } from '@/contexts/AuthContext';
 
 // CRITICAL: ssr:false must live inside a Client Component (SOLUTION-013)
 const SafetyMap = dynamic(
@@ -40,6 +41,8 @@ const SafetyMap = dynamic(
 const HEADER_H = 56;
 
 export default function MapPageClient() {
+  const { user, loading: authLoading } = useAuth();
+
   // ── City ─────────────────────────────────────────────────────────────────────
   const [selectedCity, setSelectedCity] = useState('barcelona');
 
@@ -171,27 +174,73 @@ export default function MapPageClient() {
           />
         </div>
 
-        <Link
-          href="/"
-          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}
-        >
-          <svg width="20" height="26" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16,2 C25,2 30,8 30,16 C30,26 16,42 16,42 C16,42 2,26 2,16 C2,8 7,2 16,2 Z" fill="#FF6B6B"/>
-            <path d="M16,7 C19,6 22,7.5 22,10 L22,20 Q22,26 16,27 Q10,26 10,20 L10,10 C10,7.5 13,6 16,7 Z" fill="#FFF8F0"/>
-          </svg>
-          <span
-            style={{
-              fontSize: '14px',
-              fontWeight: '700',
-              color: '#FF6B6B',
-              fontFamily: 'var(--font-crimson-pro, Georgia, serif)',
-              display: 'none',
-            }}
-            className="header-brand-text"
-          >
-            HerSafeStay
-          </span>
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {!authLoading && (user ? (
+            <>
+              <Link
+                href="/profile/saved"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#2B2D42',
+                  textDecoration: 'none',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Saved
+              </Link>
+              <Link
+                href="/profile"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'white',
+                  textDecoration: 'none',
+                  padding: '5px 12px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #2D6A4F, #1a4a36)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Profile
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#2B2D42',
+                  textDecoration: 'none',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Log In
+              </Link>
+              <Link
+                href="/auth/signup"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'white',
+                  textDecoration: 'none',
+                  padding: '5px 12px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #FF6B6B, #e85555)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Sign Up
+              </Link>
+            </>
+          ))}
+        </div>
       </header>
 
       {/* ── Main content: PropertyList sidebar + Map ── */}
