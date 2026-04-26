@@ -839,5 +839,176 @@ const supabase = createServerClient(url, anonKey, {
 
 ---
 
-*Last updated: 2026-04-12*
-*Solutions: 35*
+---
+
+## SOLUTION-036: Multi-Source Review Aggregation
+
+**Date:** 2026-04-26
+**Phase:** Platform pivot — Safety Intelligence Platform
+
+**Problem:** Platform needs reviews from multiple sources (Google, Booking, Hostelworld, Reddit) all displayed in one unified interface with safety scoring and female reviewer filtering.
+
+**Solution:** Three-layer system:
+
+**Layer 1 — Data Collection (`lib/reviewAggregator.js`)**
+```javascript
+// Orchestrates fetching from all sources in parallel
+async function fetchAndProcessReviews(propertyId) {
+  const property = await getPropertyById(propertyId);
+  const [googleReviews, bookingReviews, redditMentions] = await Promise.allSettled([
+    fetchGooglePlacesReviews(property.google_place_id),
+    fetchBookingReviews(property.booking_com_id),
+    fetchRedditMentions(property.name, property.city_id),
+  ]);
+  // Dedup by source_review_id, queue AI analysis for new reviews
+}
+```
+
+**Layer 2 — AI Analysis Pipeline**
+- Women reviewer detection (name analysis + pronoun detection + self-identification)
+- Safety keyword extraction (positive/negative signals per category)
+- Sentiment analysis via OpenAI/Claude
+- Crime severity adapter (adjusts weight by city context)
+
+**Layer 3 — Storage + Display**
+- All reviews stored in `aggregated_reviews` table with RLS
+- `is_female_reviewer`, `female_confidence`, `safety_score` columns
+- Public read: `is_published = true AND moderation_status = 'approved'`
+
+**Files:**
+- `lib/reviewAggregator.js` — orchestrator
+- `components/property/AggregatedReviews.jsx` — display component
+- `app/api/properties/[id]/reviews/route.js` — API endpoint
+- `app/api/sync/reviews/route.js` — admin sync trigger
+
+**Security:** `aggregated_reviews` table has RLS enabled (Pattern A — public read approved only). Admin uses service role for writes.
+
+---
+
+## SOLUTION-037: Crime Data Integration
+
+**Date:** 2026-04-26
+**Phase:** Platform pivot — Data Intelligence Layer
+
+**Problem:** Need real, official crime data to power safety scores rather than relying only on user reviews and editorial judgment.
+
+**Solution:** Per-source sync modules with a shared normalization interface.
+
+```javascript
+// lib/crimeDataSync.js — shared interface all sources implement
+async function syncCrimeData(cityId, source) {
+  const raw = await source.fetch();                    // Source-specific fetcher
+  const validated = raw.filter(validateCrimeRecord);  // Integrity checks
+  const normalized = validated.map(source.normalize); // → standard schema
+  const deduplicated = await dedup(normalized);        // By source_ref_id
+  await upsertCrimeData(deduplicated);                // → crime_data table
+  await recalculateZoneScores(cityId);                // → update safety_zones
+}
+
+// Per-city modules:
+// lib/crime/policeUk.js     → Police.uk REST API
+// lib/crime/mossos.js       → Mossos CSV download + parse
+// lib/crime/nypd.js         → Socrata API
+// lib/crime/fbiCde.js       → FBI CDE REST API
+// lib/crime/parisOpenData.js → Paris open data API
+```
+
+**Security:** `crime_data` table has Pattern C (admin-only) RLS. Raw incident data never exposed to public. Only aggregated scores surfaced via `safety_zones.crime_score`.
+
+**Files:**
+- `lib/crimeDataSync.js` — orchestrator + validation
+- `lib/crime/policeUk.js`
+- `lib/crime/mossos.js`
+- `lib/crime/nypd.js`
+- `lib/crime/fbiCde.js`
+- `app/api/sync/crime/route.js` — admin trigger endpoint
+
+---
+
+## SOLUTION-038: Affiliate Link Management
+
+**Date:** 2026-04-26
+**Phase:** Platform pivot — Revenue model
+
+**Problem:** Multiple booking platforms (Booking.com, Agoda, Hostelworld, Expedia) each have different URL formats, affiliate tracking parameters, and cookie windows. Need a centralized system that:
+1. Builds correct affiliate URLs per platform
+2. Logs clicks for analytics
+3. Validates URLs (prevent javascript: injection)
+4. Tracks conversion attribution
+
+**Solution:** Centralized affiliate router pattern:
+
+```javascript
+// lib/affiliateManager.js
+
+const AFFILIATE_BUILDERS = {
+  booking: ({ hotelId, affiliateId, checkIn, checkOut, adults }) =>
+    `https://www.booking.com/hotel/${hotelId}.html?aid=${affiliateId}&checkin=${checkIn}&checkout=${checkOut}&group_adults=${adults}`,
+
+  agoda: ({ hotelId, affiliateId, checkIn, checkOut }) =>
+    `https://www.agoda.com/partner?hid=${hotelId}&cid=${affiliateId}&checkin=${checkIn}&checkout=${checkOut}`,
+
+  hostelworld: ({ hostelId, affiliateCode, checkIn, checkOut }) =>
+    `https://www.hostelworld.com/hosteldetails.php/${hostelId}?from=${checkIn}&to=${checkOut}&affiliate=${affiliateCode}`,
+};
+
+// app/api/affiliate/redirect/route.js — logs click then redirects
+export async function GET(request) {
+  const { platform, propertyId, checkIn, checkOut } = parse(request.url);
+  await logAffiliateClick({ platform, propertyId, checkIn, checkOut, request });
+  const url = buildAffiliateUrl(platform, propertyId, checkIn, checkOut);
+  if (!isValidBookingUrl(url)) return new Response('Invalid URL', { status: 400 });
+  return Response.redirect(url, 302);
+}
+```
+
+**Security:**
+- All affiliate URLs validated against `ALLOWED_BOOKING_DOMAINS` allowlist (SECURITY.md §5)
+- `affiliate_clicks` table has RLS — users see own clicks only, inserts open
+- No sensitive affiliate credentials in client-side code
+- `propertyId` validated against `properties` table before redirect
+
+**Files:**
+- `lib/affiliateManager.js` — URL builders per platform
+- `app/api/affiliate/redirect/route.js` — log + redirect
+- `lib/urlValidation.js` — domain allowlist validator
+
+---
+
+## SOLUTION-039: Session Detection with @supabase/ssr + createBrowserClient
+
+**Date:** 2026-04-26
+**Phase:** Day 8 fix — Auth session not detected on profile page
+
+**Problem:** User logs in successfully but profile page (`/profile`) redirects to `/auth/login`. Session exists in localStorage (old `createClient`) but `proxy.js` reads from cookies — session mismatch.
+
+**Root cause:** `lib/supabase.js` used `createClient` from `@supabase/supabase-js` which stores sessions in **localStorage**. `proxy.js` used `createServerClient` from `@supabase/ssr` which reads from **cookies**. The two clients never saw the same session.
+
+**Solution:**
+1. Switch `lib/supabase.js` to `createBrowserClient` from `@supabase/ssr` — stores sessions in **cookies** (shared with middleware)
+2. Simplify `AuthContext.jsx` — rely on `onAuthStateChange` alone (fires `INITIAL_SESSION` on mount, eliminates race between `getSession()` + listener)
+3. Fix `proxy.js` — use `getUser()` instead of `getSession()` (validates JWT server-side, refreshes expired tokens)
+
+```javascript
+// lib/supabase.js — CORRECT (was createClient, now createBrowserClient)
+import { createBrowserClient } from '@supabase/ssr';
+export const supabase = createBrowserClient(url, anonKey);
+
+// contexts/AuthContext.jsx — CORRECT (single source of truth)
+supabase.auth.onAuthStateChange((event, session) => {
+  setUser(session?.user ?? null);
+  setLoading(false); // Loading resolves on first INITIAL_SESSION event
+});
+
+// proxy.js — CORRECT (validates + refreshes server-side)
+const { data: { user } } = await supabase.auth.getUser(); // not getSession()
+```
+
+**Prevention:** Always use `createBrowserClient` for client-side Supabase in Next.js App Router. Always use `getUser()` (not `getSession()`) in middleware.
+
+**Files:** `lib/supabase.js`, `contexts/AuthContext.jsx`, `proxy.js`
+
+---
+
+*Last updated: 2026-04-26*
+*Solutions: 39*

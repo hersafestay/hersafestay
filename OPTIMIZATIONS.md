@@ -37,6 +37,14 @@
 | OPT-013 | SafetyMap dynamic import ssr:false | Implemented | Map excluded from SSR bundle |
 | OPT-014 | Parallel zones + properties fetch | Implemented | ~40% faster city load time |
 | OPT-015 | React.memo on PropertyMarker | Implemented | Property pins don't re-render on zone click |
+| OPT-016 | Debounced search input | Implemented | Search input stays responsive on mobile |
+| OPT-017 | Memoized filter pipeline | Implemented | Filter/sort only re-runs when data changes |
+| OPT-018 | Edge caching for property searches | Pending | Eliminates DB hits for repeated city searches |
+| OPT-019 | Database query optimization | Pending | Composite indexes for review/price joins |
+| OPT-020 | Image CDN integration | Pending | 40–60% reduction via WebP + responsive sizing |
+| OPT-021 | Route-based code splitting | Pending | Reduces initial bundle by ~30% |
+| OPT-022 | Intersection Observer lazy loading | Pending | Defers off-screen card renders |
+| OPT-023 | Service Worker for offline | Pending | Safety data available on poor connections |
 
 ---
 
@@ -561,5 +569,344 @@ Both pure `searchUtils.js` functions are referentially stable — no closures ov
 
 ---
 
-*Last updated: 2026-04-11*
-*Version: 1.2*
+---
+
+## OPT-018: Edge Caching for Property Searches (PENDING)
+
+**Status:** Not yet implemented. Implement in Phase 2 Week 1.
+
+**Problem (anticipated):** `/api/properties?city=barcelona` is called on every map load. Property data for a given city changes at most once per hour (when the sync job runs). Every call hits Supabase directly at ~300ms.
+
+**Solution:** Cache property search responses at Vercel's Edge Network with stale-while-revalidate headers. Pair with Upstash Redis for parameterized queries (city + safety filters).
+
+```javascript
+// app/api/properties/route.js
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const city = searchParams.get('city');
+  const safetyMin = searchParams.get('safety_min') ?? '0';
+
+  const cacheKey = `properties:${city}:safety_min:${safetyMin}`;
+
+  // Upstash Redis cache layer (10-minute TTL)
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return Response.json(cached, {
+      headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=600' }
+    });
+  }
+
+  const properties = await getPropertiesForCity(city, { safetyMin });
+  await redis.setex(cacheKey, 600, properties); // TTL: 10 minutes
+
+  return Response.json(properties, {
+    headers: {
+      'X-Cache': 'MISS',
+      'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600',
+      'Cache-Tag': `properties-${city}`,
+    }
+  });
+}
+```
+
+**Cache invalidation:** Call `redis.del(cacheKey)` at the end of the nightly property sync job.
+
+**Expected result:** `/api/properties?city=barcelona` → <20ms on cache hit vs ~300ms cold Supabase query.
+
+---
+
+## OPT-019: Database Query Optimization (PENDING)
+
+**Status:** Not yet implemented. Implement in Phase 2 Week 2 after review aggregation tables exist.
+
+**Problem (anticipated):** As `aggregated_reviews` and `property_prices` tables grow to 100K+ rows, joins between `properties` → `aggregated_reviews` → `property_prices` will become slow without composite indexes.
+
+**Solution:** Add targeted composite indexes for the access patterns used by the API.
+
+```sql
+-- Pattern: fetch all approved reviews for a property, ordered by source priority
+CREATE INDEX idx_reviews_property_approved
+  ON aggregated_reviews (property_id, approved)
+  WHERE approved = true;
+
+-- Pattern: fetch all active prices for a property, ordered by price
+CREATE INDEX idx_prices_property_active
+  ON property_prices (property_id, available, price_per_night)
+  WHERE available = true;
+
+-- Pattern: fetch properties in a city filtered by safety zone
+CREATE INDEX idx_properties_city_zone
+  ON properties (city_id, zone_id)
+  WHERE is_active = true;
+
+-- Pattern: safety zones for a city (used on every map load)
+CREATE INDEX idx_zones_city_published
+  ON safety_zones (city_id, published)
+  WHERE published = true;
+
+-- Partial index: zone reports awaiting moderation (admin queue)
+CREATE INDEX idx_reports_pending
+  ON zone_reports (created_at DESC)
+  WHERE moderation_status = 'pending';
+```
+
+**Also:** Use `EXPLAIN ANALYZE` in Supabase SQL editor to verify index usage before and after:
+
+```sql
+EXPLAIN ANALYZE
+SELECT ar.*, p.name
+FROM aggregated_reviews ar
+JOIN properties p ON p.id = ar.property_id
+WHERE ar.property_id = 'uuid-here'
+  AND ar.approved = true
+ORDER BY ar.review_date DESC
+LIMIT 20;
+-- Look for "Index Scan" (good) vs "Seq Scan" (bad) in the output
+```
+
+**Expected result:** Property detail page review queries: ~8ms vs ~120ms full-table scan at 50K reviews.
+
+---
+
+## OPT-020: Image CDN Integration (PENDING)
+
+**Status:** Not yet implemented. Implement when first real property images are ingested (Phase 2 Week 2).
+
+**Problem (anticipated):** Property images from Booking.com/Google Places are served as large JPEGs (800–1200px wide). On mobile cards (displayed at 320–400px), this wastes 3–4× bandwidth. No lazy loading means images below the fold load immediately.
+
+**Solution:** Route all property images through Next.js Image Optimization with Vercel's built-in CDN. Add domain allowlist in `next.config.js`.
+
+```javascript
+// next.config.js
+module.exports = {
+  images: {
+    remotePatterns: [
+      { hostname: 'images.unsplash.com' },
+      { hostname: 'lh3.googleusercontent.com' },   // Google Places photos
+      { hostname: 'cf.bstatic.com' },               // Booking.com CDN
+      { hostname: 'r-xx.bstatic.com' },             // Booking.com CDN (alt)
+      { hostname: 'imgs.hostelworld.com' },          // Hostelworld images
+    ],
+    formats: ['image/avif', 'image/webp'],          // Prefer AVIF (50% smaller than WebP)
+    minimumCacheTTL: 86400,                          // Cache optimized images 24h
+  },
+};
+```
+
+```javascript
+// components/property/PropertyCard.jsx
+import Image from 'next/image';
+
+function PropertyCard({ property }) {
+  return (
+    <div style={{ position: 'relative', height: '200px', borderRadius: '8px', overflow: 'hidden' }}>
+      <Image
+        src={property.image_url}
+        alt={property.name}
+        fill
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
+        style={{ objectFit: 'cover' }}
+        loading="lazy"         // Native lazy load below fold
+        placeholder="blur"     // Show blurred placeholder while loading
+        blurDataURL={property.blur_hash}  // 10px thumbnail pre-generated
+      />
+    </div>
+  );
+}
+```
+
+**Pre-generate blur hashes** during the property sync job:
+
+```javascript
+// scripts/sync/generateBlurHashes.js
+import { getPlaiceholder } from 'plaiceholder';
+
+const { base64 } = await getPlaiceholder(imageUrl);
+// Store base64 in properties.blur_hash column
+```
+
+**Expected result:** 40–60% image payload reduction via WebP/AVIF; perceived load time improved via blur placeholder + lazy load.
+
+---
+
+## OPT-021: Route-Based Code Splitting (PENDING)
+
+**Status:** Not yet implemented. Review bundle composition once Phase 2 routes exist.
+
+**Problem (anticipated):** As the app grows from 3 routes to 10+ (map, property detail, profile, saved, auth pages, admin), all shared dependencies land in the root bundle. Every visitor downloads code for pages they never visit.
+
+**Solution:** Leverage Next.js App Router's automatic per-route code splitting. Audit with `@next/bundle-analyzer` and apply `dynamic()` to heavy components not needed on initial load.
+
+```bash
+npm install @next/bundle-analyzer
+```
+
+```javascript
+// next.config.js
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+module.exports = withBundleAnalyzer({ /* ...existing config */ });
+```
+
+```bash
+# Generate visual bundle map
+ANALYZE=true npm run build
+```
+
+**Heavy components to lazy-load:**
+
+```javascript
+// Only load review carousel when user opens a property detail panel
+const ReviewCarousel = dynamic(() => import('@/components/property/ReviewCarousel'), {
+  loading: () => <div style={{ height: '120px', background: '#f5f0e8', borderRadius: '8px' }} />,
+});
+
+// Only load affiliate price comparison widget when panel is open
+const PriceComparison = dynamic(() => import('@/components/property/PriceComparison'), {
+  loading: () => <p style={{ color: '#999' }}>Loading prices...</p>,
+});
+
+// Admin panel — only load for admin users (checked server-side)
+const AdminPanel = dynamic(() => import('@/components/admin/AdminPanel'), { ssr: false });
+```
+
+**Target:** Reduce root bundle from ~200KB to <140KB gzipped after Phase 2 routes added.
+
+---
+
+## OPT-022: Intersection Observer for Card Lazy Loading (PENDING)
+
+**Status:** Not yet implemented. Implement when property list exceeds 20 items.
+
+**Problem (anticipated):** The sidebar property list renders all cards immediately, even those below the scroll fold. At 30+ properties, this causes 30 React component mounts, 30 image requests, and ~90ms render jank on first load.
+
+**Solution:** Use `IntersectionObserver` to defer rendering of cards outside the visible viewport.
+
+```javascript
+// hooks/useInView.js
+import { useEffect, useRef, useState } from 'react';
+
+export function useInView(options = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect(); // Once visible, never hide again
+      }
+    }, { threshold: 0.1, rootMargin: '100px', ...options });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, inView];
+}
+```
+
+```javascript
+// components/property/PropertyCard.jsx
+import { useInView } from '@/hooks/useInView';
+
+function PropertyCard({ property }) {
+  const [ref, inView] = useInView();
+
+  return (
+    <div ref={ref} style={{ minHeight: '220px' }}>
+      {inView ? (
+        <PropertyCardContent property={property} />
+      ) : (
+        <PropertyCardSkeleton />  // Lightweight placeholder, same height
+      )}
+    </div>
+  );
+}
+```
+
+**Result:** Only the ~5 visible cards render on initial load. Remaining cards mount as user scrolls, eliminating initial render jank.
+
+**Note:** `rootMargin: '100px'` starts loading cards 100px before they enter the viewport, preventing visible pop-in.
+
+---
+
+## OPT-023: Service Worker for Offline Safety Data (PENDING)
+
+**Status:** Not yet implemented. Implement at public launch (Phase 2 Week 4).
+
+**Problem:** Women travelers often check HerSafeStay in situations with poor connectivity (arriving at an unfamiliar airport, underground metro stations). If the app can't load, it's useless at the exact moment it's needed most.
+
+**Solution:** Cache zone safety data and property lists for recently viewed cities using a Service Worker with a cache-first strategy.
+
+```javascript
+// public/sw.js
+const CACHE_NAME = 'hss-v1';
+const STATIC_ASSETS = ['/', '/manifest.json', '/favicon.svg'];
+const API_CACHE_PATTERNS = [
+  /\/api\/zones\?city=/,
+  /\/api\/properties\?city=/,
+  /\/api\/cities/,
+];
+
+// Install: cache static shell
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+// Fetch: cache-first for API zone/property data
+self.addEventListener('fetch', (event) => {
+  const isApiCacheable = API_CACHE_PATTERNS.some(p => p.test(event.request.url));
+
+  if (isApiCacheable) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        if (cached) return cached;
+
+        const response = await fetch(event.request);
+        if (response.ok) {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      })
+    );
+  }
+});
+```
+
+```javascript
+// app/layout.js — register service worker
+useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(console.error);
+  }
+}, []);
+```
+
+**Cache strategy per resource type:**
+
+| Resource | Strategy | TTL |
+|----------|----------|-----|
+| Zone polygons + scores | Cache-first | 1 hour |
+| Property list | Cache-first | 30 minutes |
+| Property images | Network-first | 24 hours |
+| Static JS/CSS | Cache-first (versioned) | Indefinitely |
+
+**Offline UX:** Show "Showing cached data — last updated [time]" banner when navigator.onLine is false.
+
+**Result:** Safety data accessible in airplane mode for recently viewed cities. Critical for the target user.
+
+---
+
+*Last updated: 2026-04-26*
+*Version: 1.3*

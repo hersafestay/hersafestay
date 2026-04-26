@@ -540,5 +540,295 @@ Run before every commit: `npm run lint:secrets`
 
 ---
 
-*Last updated: 2026-04-11*
+---
+
+## 10. External API Security
+
+### API Key Rotation Policy
+
+| Key Type | Rotation Frequency | Trigger |
+|----------|------------------|---------|
+| Google Maps API key | Every 6 months | Or immediately on any leak/bill spike |
+| Supabase service role key | Every 3 months | Or immediately on any compromise suspicion |
+| OpenAI API key | Every 6 months | Or on unexpected usage spike |
+| Reddit client secret | Every 6 months | Or on unauthorized access |
+| Booking affiliate credentials | Per partner policy | Follow partner instructions |
+
+**After rotation:** Update Vercel environment variables → redeploy → verify functionality.
+
+### Rate Limit Monitoring
+
+Set alerts in each service dashboard when usage hits 80% of limits or expected budget:
+
+| Service | Alert Threshold | Action |
+|---------|----------------|--------|
+| Google Maps API | $150/month | Investigate usage spike, add caching |
+| Google Places API | $150/month | Throttle review sync frequency |
+| OpenAI API | $80/month | Switch bulk processing to Claude Haiku |
+| Supabase | 80% storage | Upgrade to Pro or archive old data |
+| Reddit API | 90 req/min | Increase sync interval |
+
+### Service Account Isolation
+
+Each external service uses a separate, scoped credential:
+- **Google Maps** (client): `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — HTTP referrer restricted, Maps JS API only
+- **Google Places** (server): `GOOGLE_PLACES_SERVER_KEY` — no referrer restriction, server-side only
+- **OpenAI** (server): `OPENAI_API_KEY` — server-side only, set monthly spend cap in OpenAI dashboard
+- **Reddit** (server): `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` — server-side only
+- **Upstash Redis**: `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — server-side only
+
+**Never** use a single multi-purpose API key for multiple services. Isolation limits blast radius of any single compromise.
+
+### Webhook Signature Verification
+
+For any incoming webhooks (Supabase Edge Function callbacks, affiliate postbacks):
+
+```javascript
+// lib/webhookValidation.js
+import crypto from 'crypto';
+
+export function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSig = crypto
+    .createHmac('sha256', secret)
+    .update(typeof payload === 'string' ? payload : JSON.stringify(payload))
+    .digest('hex');
+  // Use timingSafeEqual to prevent timing attacks
+  const expectedBuf = Buffer.from(`sha256=${expectedSig}`);
+  const receivedBuf = Buffer.from(signature);
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+}
+
+// In webhook route handler:
+export async function POST(request) {
+  const signature = request.headers.get('x-webhook-signature');
+  const body = await request.text();
+  if (!verifyWebhookSignature(body, signature, process.env.WEBHOOK_SECRET)) {
+    return Response.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+  // ... process webhook
+}
+```
+
+---
+
+## 11. Data Source Validation
+
+### Crime Data Integrity Checks
+
+Before incorporating any crime data into zone scores:
+
+```javascript
+// lib/crimeDataSync.js
+function validateCrimeRecord(record) {
+  const checks = {
+    hasRequiredFields: !!(record.zone_id && record.crime_type && record.data_source),
+    validCrimeType: VALID_CRIME_TYPES.includes(record.crime_type),
+    validSeverity: ['low','medium','high','critical'].includes(record.severity),
+    notFutureDated: !record.incident_date || new Date(record.incident_date) <= new Date(),
+    notTooOld: !record.incident_date || new Date(record.incident_date) > new Date('2020-01-01'),
+    validCoordinates: !record.location_lat || (
+      record.location_lat >= -90 && record.location_lat <= 90 &&
+      record.location_lng >= -180 && record.location_lng <= 180
+    ),
+  };
+  const passed = Object.values(checks).every(Boolean);
+  return { passed, checks };
+}
+```
+
+**Spike detection:** If a crime data pull returns >50% more incidents than the previous pull for the same zone and period, flag for manual review before incorporating.
+
+### Review Authenticity Verification
+
+Signals that a review may be fake or manipulated:
+
+```javascript
+const FAKE_REVIEW_SIGNALS = {
+  extremeRating: (r) => r.rating === 5.0 && r.safety_score > 9.5,   // Suspiciously perfect
+  tooShort: (r) => r.review_text.length < 30,                         // Bot placeholder
+  repeatedText: (r, existing) => existing.some(e => e.review_text === r.review_text),
+  suddenSpike: (count, avgCount) => count > avgCount * 3,             // Astroturfing
+  suspiciousDate: (r) => /* reviews from the future */ new Date(r.review_date) > new Date(),
+};
+```
+
+Reviews triggering ≥2 signals are held in `moderation_status = 'pending'` for manual review.
+
+### Source Attribution Requirements
+
+Every data point displayed to users MUST include:
+1. **Source name** — "Mossos d'Esquadra", "Google Places", "Reddit r/solotravel"
+2. **Last updated date** — "Updated April 2026"
+3. **Confidence tier** — Tier 1 (high), Tier 2 (medium), Tier 3 (estimated)
+4. **Data point count** — "Based on 847 police reports and 2,341 reviews"
+
+Non-negotiable for trust. Users deserve to know where every score comes from.
+
+### Confidence Scoring Methodology
+
+```javascript
+function calculateZoneConfidence(zone) {
+  let score = 0;
+
+  // Crime data factors (40% weight)
+  if (zone.crime_data_sources?.length > 0) score += 20;
+  if (zone.last_crime_update > thirtyDaysAgo) score += 20;
+
+  // Review factors (40% weight)
+  if (zone.review_count >= 100) score += 20;
+  else if (zone.review_count >= 20) score += 10;
+  if (zone.women_review_count >= 20) score += 20;
+
+  // Freshness factors (20% weight)
+  if (zone.updated_at > sevenDaysAgo) score += 20;
+  else if (zone.updated_at > thirtyDaysAgo) score += 10;
+
+  // Map to tiers
+  if (score >= 80) return 'tier1';
+  if (score >= 40) return 'tier2';
+  return 'tier3';
+}
+```
+
+---
+
+## 12. User Privacy
+
+### Search History Encryption
+
+Search history is stored in plaintext for analytics but with these privacy controls:
+
+```sql
+-- Anonymous sessions: no user_id linkage
+INSERT INTO search_history (city_id, session_id, created_at)
+VALUES ($1, $2, NOW());
+
+-- Authenticated sessions: linked to user_id for personalization
+INSERT INTO search_history (user_id, city_id, filter_state, created_at)
+VALUES (auth.uid(), $1, $2, NOW());
+```
+
+**Retention policy:**
+- Anonymous search history: auto-deleted after 90 days
+- Authenticated user history: retained until user deletion request
+- Aggregated analytics (no personal data): retained indefinitely
+
+```sql
+-- Scheduled cleanup (run weekly via Supabase Edge Function)
+DELETE FROM search_history
+WHERE user_id IS NULL AND created_at < NOW() - INTERVAL '90 days';
+```
+
+### Bookmark Privacy
+
+User bookmarks are private by default. The RLS policy `bookmarks_owner_only` ensures users can ONLY see their own bookmarks, even if they know another user's ID.
+
+**Never expose bookmark data in:**
+- API responses without authentication
+- Public endpoints
+- Analytics exports (use aggregate counts only)
+
+### Affiliate Click Anonymization
+
+After 30 days, affiliate click records are anonymized:
+
+```sql
+-- Run monthly via cron
+UPDATE affiliate_clicks
+SET
+  user_id = NULL,         -- Unlink from user
+  ip_hash = NULL,         -- Remove IP hash
+  session_id = NULL       -- Remove session
+WHERE created_at < NOW() - INTERVAL '30 days'
+  AND (user_id IS NOT NULL OR ip_hash IS NOT NULL);
+```
+
+Revenue analytics only require platform, property, count, and timestamp — no personal data needed.
+
+### GDPR Compliance Requirements
+
+**Right to deletion (Article 17):** When a user deletes their account:
+```sql
+-- Cascade via ON DELETE CASCADE:
+-- user_profiles → auto-deleted
+-- user_bookmarks → auto-deleted
+-- search_history → auto-deleted
+
+-- Anonymize (not delete) for data integrity:
+UPDATE affiliate_clicks SET user_id = NULL WHERE user_id = $deleted_user_id;
+UPDATE zone_reports SET user_email_hash = NULL WHERE user_email_hash = $user_hash;
+```
+
+**Right to access (Article 15):** `/api/users/export` endpoint returns all user data as JSON.
+
+**Consent:** Cookie consent banner required for non-essential cookies (GA4, LogRocket).
+
+**Data minimization:** Collect only what is needed. Do not collect:
+- Full IP addresses (only hashed for dedup)
+- Exact location (only city-level for search)
+- Payment details (handled entirely by booking platforms)
+
+---
+
+## 13. Content Liability
+
+### Review Display Disclaimers
+
+All review displays must include:
+
+```html
+<!-- Required disclaimer on all review sections -->
+<p class="disclaimer">
+  Reviews are aggregated from multiple platforms and filtered using AI.
+  HerSafeStay does not guarantee the accuracy of individual reviews.
+  <a href="/about/data-sources">Learn how we process reviews →</a>
+</p>
+```
+
+### Safety Score Limitations
+
+The safety score display must include a visible limitation statement:
+
+```html
+<p class="safety-disclaimer">
+  Safety scores are based on available data and may not reflect current conditions.
+  Always check local government travel advisories before traveling.
+  Last updated: [DATE]. Data sources: [LIST].
+</p>
+```
+
+Link prominently to official travel advisories:
+- UK: gov.uk/foreign-travel-advice
+- USA: travel.state.gov
+- Australia: smartraveller.gov.au
+- Canada: travel.gc.ca
+
+### User-Generated Content Moderation
+
+Zone reports submitted by users go through:
+
+1. **Automated checks:** Rate limiting (5/day per IP), duplicate detection, spam filter
+2. **AI pre-screening:** Flag violent/inappropriate content for manual review
+3. **Manual review queue:** Admin reviews all reports before `status = 'approved'`
+4. **Approved reports only** influence zone scores
+
+No user-generated content is displayed publicly without editorial approval.
+
+### DMCA Response Protocol
+
+**Response time commitment:** Within 24 hours of any valid DMCA notice.
+
+**Process:**
+1. Receive notice at legal@hersafestay.com
+2. Within 24 hours: remove or disable access to flagged content
+3. Within 72 hours: send acknowledgment to complainant
+4. Log in SOLUTIONS.md with resolution
+5. Implement prevention to avoid recurrence
+
+**Counter-notice:** If content is believed to be fair use or correctly attributed, consult legal counsel before filing counter-notice.
+
+---
+
+*Last updated: 2026-04-26*
 *Security contact: Review all issues at project level before shipping any feature*

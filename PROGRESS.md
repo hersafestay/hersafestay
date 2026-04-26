@@ -788,6 +788,214 @@ CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 
 ---
 
+## Phase 2: Safety Intelligence Platform (Days 9–30)
+
+> **Platform pivot:** Evolve from MVP safety map to full Safety Intelligence Platform.
+> Full architecture in [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+---
+
+### Day 9 — Affiliate Foundation + Price Comparison
+**Target date:** April 27, 2026
+**Expert role:** Full-Stack Engineer + Business Development
+**Status:** ⏳
+
+**Goal:** Multi-source price comparison live. Affiliate programs applied for.
+
+#### Deliverables
+
+- [ ] Apply to Booking.com Affiliate Partner Program (affiliate.booking.com)
+- [ ] Apply to Hostelworld Affiliate Program (developers.hostelworld.com)
+- [ ] Apply to Hotels.com / Expedia Affiliate Network
+- [ ] `lib/affiliateManager.js` — URL builders for all platforms (Booking, Agoda, Hostelworld, Expedia)
+- [ ] `app/api/affiliate/redirect/route.js` — click logging + safe redirect
+- [ ] `lib/urlValidation.js` — booking domain allowlist (already referenced in SECURITY.md §5)
+- [ ] `app/api/properties/[id]/prices/route.js` — multi-source price API
+- [ ] `components/property/PriceComparison.jsx` — Skyscanner-style price table
+- [ ] `affiliate_clicks` table migration + RLS (see ARCHITECTURE.md Section 7)
+- [ ] `property_prices` table migration + RLS
+- [ ] Wire price comparison into property detail page
+- [ ] SOLUTIONS.md — SOLUTION-038 (affiliate management) ✅ (documented in advance)
+
+**Testing requirements:**
+- [ ] Affiliate redirect logs click to `affiliate_clicks` table
+- [ ] Price comparison shows multiple platforms with "Best price" badge
+- [ ] Redirect URL is validated against allowlist (prevent javascript: injection)
+- [ ] RLS verified: affiliate_clicks readable only by own user, inserts open
+
+**Success criteria:**
+> Property detail page shows price from 3+ platforms. Clicking any "Book →" logs the click and redirects to correct affiliate URL. Affiliate program applications submitted.
+
+---
+
+### Day 10 — Review Aggregation MVP
+**Target date:** April 28, 2026
+**Expert role:** Backend Engineer + AI Engineer
+**Status:** ⏳
+
+**Goal:** Real women's reviews from Google Places displayed on property pages.
+
+#### Deliverables
+
+- [ ] `GOOGLE_PLACES_SERVER_KEY` configured in Vercel (server-side, no referrer restriction)
+- [ ] `lib/reviewAggregator.js` — Google Places review fetcher
+- [ ] `aggregated_reviews` table migration + RLS
+- [ ] AI female reviewer detection (name analysis + pronoun detection, no OpenAI cost yet)
+- [ ] Safety keyword extraction (regex-based Phase 1, no AI cost)
+- [ ] `app/api/sync/reviews/route.js` — admin trigger to sync reviews for a property
+- [ ] `app/api/properties/[id]/reviews/route.js` — return approved female reviews
+- [ ] `components/property/AggregatedReviews.jsx` — display component with attribution
+- [ ] Run review sync for all published Barcelona properties
+- [ ] Wire into property detail page
+
+**Phase 1 (no AI cost):**
+- Female reviewer: name classification via curated names list
+- Safety keywords: regex pattern matching
+- This gets reviews into the database; AI enrichment added Day 11
+
+**Testing requirements:**
+- [ ] At least 3 Google reviews synced for 1 Barcelona property
+- [ ] Reviews display with "Originally on Google Maps" attribution + link
+- [ ] Female reviewer classification working (spot-check 5 reviews)
+- [ ] `aggregated_reviews` RLS verified: only approved reviews returned via anon client
+
+---
+
+### Day 11 — AI Review Analysis + User Bookmarks
+**Target date:** April 29, 2026
+**Expert role:** AI Engineer + Full-Stack
+**Status:** ⏳
+
+**Goal:** AI-powered safety scoring from women's reviews. Users can save properties.
+
+#### Deliverables
+
+- [ ] `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in Vercel
+- [ ] AI safety keyword extraction integrated into review sync pipeline
+- [ ] AI sentiment analysis per review (property safety context)
+- [ ] `properties.women_safety_score` calculated from AI review scores
+- [ ] `user_bookmarks` table migration + RLS
+- [ ] `app/profile/saved/page.js` — saved properties page (protected route)
+- [ ] Bookmark button on property detail and property list cards
+- [ ] `app/api/users/bookmarks/route.js` — GET/POST/DELETE
+- [ ] Women's safety score displayed prominently on property cards
+
+**Testing requirements:**
+- [ ] Bookmark a property → appears on /profile/saved
+- [ ] Delete bookmark → removed from saved list
+- [ ] `user_bookmarks` RLS: cannot read other users' bookmarks with anon key
+- [ ] Women's safety score updates when new reviews are synced
+- [ ] OpenAI cost monitored: set $20/month cap in OpenAI dashboard
+
+---
+
+### Day 12 — Crime Data Integration
+**Target date:** April 30, 2026
+**Expert role:** Data Engineer + GIS Specialist
+**Status:** ⏳
+
+**Goal:** Official police data powering safety scores. No more editorial-only scoring.
+
+#### Deliverables
+
+- [ ] `crime_data` table migration + RLS (Pattern C — admin only)
+- [ ] `lib/crimeDataSync.js` — orchestrator + validation (SOLUTION-037)
+- [ ] `lib/crime/policeUk.js` — Police.uk API client (London)
+- [ ] `lib/crime/nypd.js` — NYPD Socrata API client (NYC)
+- [ ] Run crime data import for London + NYC
+- [ ] `scripts/recalculate-zone-scores.js` — recompute safety scores from crime data
+- [ ] Zone scores updated for London + NYC based on real data
+- [ ] `app/api/sync/crime/route.js` — admin trigger
+- [ ] Data transparency display: "Based on 847 police reports (data.police.uk)"
+
+**Testing requirements:**
+- [ ] Crime data imported for at least 5 London zones
+- [ ] Zone safety scores updated after import (compare to editorial scores)
+- [ ] `crime_data` table: anon client returns 0 rows (RLS working)
+- [ ] Transparency display shows correct source + date
+
+---
+
+### Day 13 — More Cities + City Landing Pages
+**Target date:** May 1, 2026
+**Expert role:** SEO Engineer + Data Engineer
+**Status:** ⏳
+
+**Goal:** More cities live with real data. SEO-optimized city pages indexed.
+
+#### Deliverables
+
+- [ ] `lib/crime/parisOpenData.js` — Paris open data client
+- [ ] `lib/crime/mossos.js` — Mossos CSV parser (Barcelona)
+- [ ] Crime data imported for Barcelona + Paris zones
+- [ ] Add 3 more cities to platform (from: Tokyo, Singapore, Rome, Sydney, Toronto)
+- [ ] `app/city/[slug]/page.js` — SSR city landing pages
+  - City-specific SEO metadata
+  - Safety overview (zone count, score distribution)
+  - Embedded map preview
+  - "Best areas to stay" (top 3 safe zones)
+  - Zone list (SEO content)
+  - CTA: "Find safe hotels in [City] →"
+- [ ] City pages linked from main navigation
+- [ ] `/sitemap.xml` updated with city pages
+- [ ] SOLUTIONS.md updated
+
+**Success criteria:**
+> 8 cities live with real crime data. City pages indexed in Google Search Console.
+
+---
+
+### Day 14 — Reddit Integration + Community Data
+**Target date:** May 2, 2026
+**Expert role:** Backend Engineer
+**Status:** ⏳
+
+**Goal:** Reddit community data enriching safety scores. Safety reports working.
+
+#### Deliverables
+
+- [ ] `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` in Vercel
+- [ ] `lib/reviewAggregator.js` — Reddit client (r/solotravel, city subreddits)
+- [ ] Semantic search for property mentions in Reddit posts
+- [ ] Reddit reviews added to `aggregated_reviews` with attribution ("Via Reddit r/solotravel")
+- [ ] Zone safety reports form rebuilt (from basic modal → full flow)
+- [ ] `app/api/reports/route.js` — rate limiting (5/IP/day), email hash dedup
+- [ ] Admin moderation queue (Supabase table view)
+- [ ] SOLUTIONS.md updated
+
+**Testing requirements:**
+- [ ] Reddit review sync returns ≥10 posts for Barcelona
+- [ ] Safety report submits → appears in Supabase with `status: 'pending'`
+- [ ] 6th report in 24hrs → rejected (rate limiting)
+- [ ] RLS: zone_reports unreadable via anon client
+
+---
+
+### Week 4: Scale + Launch Preparation
+
+**Day 15-21: Scale**
+- 20+ cities live with crime data
+- All affiliate programs approved and live
+- Premium subscription tier built (Stripe integration)
+- Mobile app shell (React Native or PWA)
+- Performance: Lighthouse ≥ 90, map <2s on 4G
+
+**Day 22-28: Polish + PR**
+- Content: Safety guides for all cities (SEO)
+- PR outreach: TechCrunch, Travel + Leisure, solo female travel blogs
+- Reddit soft launch: r/solotravel, r/TwoXChromosomes
+- Product Hunt preparation
+- Beta user feedback incorporated
+
+**Day 29-30: Public Launch**
+- Vercel production deploy
+- Product Hunt launch
+- Press embargo lifts
+- TypeForm participants notified
+- Social media announcement
+
+---
+
 ## Post-Launch: Phase 2 Priorities
 
 Based on launch learnings, prioritize from this list:
